@@ -1,0 +1,12 @@
+__tests__
+src
+dist
+examples
+
+.eslintrc*
+.prettierrc*
+.eslintignore
+.editorconfig
+.release-it.json
+tsconfig.json
+jest.config.js
