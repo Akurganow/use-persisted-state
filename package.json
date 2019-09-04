@@ -40,13 +40,12 @@
     "url": "https://github.com/Akurganow/use-persisted-state/issues"
   },
   "homepage": "https://github.com/Akurganow/use-persisted-state#readme",
-  "dependencies": {
-    "@release-it/conventional-changelog": "^1.1.0"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "react": "*"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^1.1.0",
     "@testing-library/react": "^9.1.4",
     "@testing-library/react-hooks": "^2.0.1",
     "@types/jest": "^24.0.18",
