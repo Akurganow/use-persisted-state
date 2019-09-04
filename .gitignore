@@ -1,3 +1,7 @@
+lib
+dist
+
+# Environment
 .env
 .env.test
 .env.json

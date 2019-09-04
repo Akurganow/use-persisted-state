@@ -1,0 +1,66 @@
+{
+  "name": "use-persisted-state",
+  "version": "1.0.0",
+  "description": "Like useState hook but with persistance in storage",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "/lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "build:types": "tsc --emitDeclarationOnly",
+    "test": "jest --verbose",
+    "examples": "npm run build:watch & parcel examples/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Akurganow/use-persisted-state.git"
+  },
+  "keywords": [
+    "react",
+    "hook",
+    "storage",
+    "local-storage",
+    "session-storage",
+    "persistence",
+    "persist",
+    "sync"
+  ],
+  "author": "Alex Kurganov <me@akurganow.ru>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/Akurganow/use-persisted-state/issues"
+  },
+  "homepage": "https://github.com/Akurganow/use-persisted-state#readme",
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "*"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^9.1.4",
+    "@testing-library/react-hooks": "^2.0.1",
+    "@types/jest": "^24.0.18",
+    "@types/react": "^16.9.2",
+    "@typescript-eslint/eslint-plugin": "^2.1.0",
+    "@typescript-eslint/parser": "^2.1.0",
+    "eslint": "^6.3.0",
+    "eslint-config-jest-enzyme": "^7.1.1",
+    "eslint-config-prettier": "^6.2.0",
+    "eslint-plugin-jest": "^22.16.0",
+    "eslint-plugin-react-hooks": "^2.0.1",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "prettier-eslint": "^9.0.0",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-test-renderer": "^16.9.0",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.6.2"
+  }
+}
