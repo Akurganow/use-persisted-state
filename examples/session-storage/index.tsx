@@ -5,7 +5,7 @@ import createPersisterState from '../../lib'
 
 const [usePersistedState, clear] = createPersisterState('simple_example', window.sessionStorage)
 
-export default function App() {
+function App() {
   const [count, setCount] = usePersistedState<number>('count', 0)
 
   return (
