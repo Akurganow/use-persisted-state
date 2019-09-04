@@ -21,6 +21,7 @@ export default function App() {
         }}>
         +
       </button>
+      <button onClick={() => { clear() }}>Clear</button>
     </div>
   )
 }
