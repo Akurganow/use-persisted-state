@@ -1,10 +1,11 @@
 {
-  "name": "@ak/use-persisted-state",
+  "name": "@plq/use-persisted-state",
   "version": "0.0.1",
   "description": "Like useState hook but with persistance in storage",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
+    "/src",
     "/lib",
     "LICENSE"
   ],
@@ -30,7 +31,7 @@
     "persist",
     "sync"
   ],
-  "author": "Alex Kurganov <me@akurganow.ru>",
+  "author": "Alex Kurganov <me@plqurganow.ru>",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

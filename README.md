@@ -4,7 +4,7 @@ Persists the state to localStorage, sessionStorage or anything else that impleme
 
 ## Example
 ```jsx
-import createPersistedState from '@ak/use-persisted-state'
+import createPersistedState from '@plq/use-persisted-state'
 
 const [usePersistedState] = createPersistedState('example')
 
@@ -23,11 +23,11 @@ export default function App() {
 ```
 
 ##Requirement
-To use `@ak/use-persisted-state`, you must use `react@16.8.0` or greater which includes Hooks.
+To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater which includes Hooks.
 
 ##Clear Storage
 ```jsx
-import createPersistedState from '@ak/use-persisted-state'
+import createPersistedState from '@plq/use-persisted-state'
 
 const [usePersistedState, clear] = createPersistedState('example')
 
@@ -48,7 +48,7 @@ export default function App() {
 
 ## Use sessionStorage
 ```jsx
-import createPersistedState from '@ak/use-persisted-state'
+import createPersistedState from '@plq/use-persisted-state'
 
 const [usePersistedState] = createPersistedState('example', window.sessionStorage)
 
@@ -67,7 +67,7 @@ export default function App() {
 ```
 ## Use custom storage
 ```jsx
-import createPersistedState from '@ak/use-persisted-state'
+import createPersistedState from '@plq/use-persisted-state'
 
 const myStorage = {
   getItem: (key) => getItemFromSomeStorage(key)
