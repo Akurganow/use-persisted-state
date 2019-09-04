@@ -11,6 +11,7 @@ export default function createPersistedState(
   const safeStorageKey = `persisted_state_hook:${storageKey}`
   const clear = (): void => {
     storage.removeItem(safeStorageKey)
+    window.dispatchEvent(new StorageEvent('storage', { key: safeStorageKey }))
   }
 
   let initialPersist = storage.getItem(safeStorageKey)
@@ -57,7 +58,7 @@ export default function createPersistedState(
       const handleStorage = (event: StorageEvent): void => {
         if (event.key === safeStorageKey) {
           const newState = JSON.parse(event.newValue as string)
-          const newValue = newState[key]
+          const newValue = newState ? newState[key] : initialValue
 
           setState(newValue)
         }
