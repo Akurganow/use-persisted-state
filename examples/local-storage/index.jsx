@@ -1,9 +1,9 @@
 import React from 'react'
 import { render } from 'react-dom'
 
-import createPersisterState from '../../lib'
+import createPersistedState from '../../lib'
 
-const [usePersistedState, clear] = createPersisterState('simple_example')
+const [usePersistedState, clear] = createPersistedState('simple_example')
 
 function App() {
   const [count, setCount] = usePersistedState('count', 0)
