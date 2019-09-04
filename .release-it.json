@@ -1,0 +1,41 @@
+{
+  "non-interactive": false,
+  "dry-run": false,
+  "verbose": false,
+  "force": false,
+  "preReleaseId": null,
+  "buildCommand": false,
+  "safeBump": false,
+  "requireCleanWorkingDir": false,
+  "requireUpstream": true,
+  "src": {
+    "commit": true,
+    "commitMessage": "Release %s",
+    "commitArgs": "",
+    "tag": true,
+    "tagName": "v%s",
+    "tagAnnotation": "Release %s",
+    "push": true,
+    "pushArgs": "",
+    "beforeStartCommand": false,
+    "afterReleaseCommand": false
+  },
+  "npm": {
+    "publish": false
+  },
+  "prompt": {
+    "src": {
+      "status": false,
+      "commit": true,
+      "tag": true,
+      "push": false,
+      "release": false
+    }
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "angular",
+      "infile": "CHANGELOG.md"
+    }
+  }
+}

@@ -13,6 +13,7 @@
     "build:watch": "tsc --watch",
     "build:types": "tsc --emitDeclarationOnly",
     "test": "jest --verbose",
+    "release": "release-it",
     "examples": "npm run build:watch & parcel examples/index.html"
   },
   "repository": {
@@ -38,7 +39,9 @@
     "url": "https://github.com/Akurganow/use-persisted-state/issues"
   },
   "homepage": "https://github.com/Akurganow/use-persisted-state#readme",
-  "dependencies": {},
+  "dependencies": {
+    "@release-it/conventional-changelog": "^1.1.0"
+  },
   "peerDependencies": {
     "react": "*"
   },
@@ -49,6 +52,7 @@
     "@types/react": "^16.9.2",
     "@typescript-eslint/eslint-plugin": "^2.1.0",
     "@typescript-eslint/parser": "^2.1.0",
+    "conventional-changelog-cli": "^2.0.23",
     "eslint": "^6.3.0",
     "eslint-config-jest-enzyme": "^7.1.1",
     "eslint-config-prettier": "^6.2.0",
@@ -60,6 +64,7 @@
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
     "react-test-renderer": "^16.9.0",
+    "release-it": "^12.3.6",
     "ts-jest": "^24.0.2",
     "typescript": "^3.6.2"
   }
