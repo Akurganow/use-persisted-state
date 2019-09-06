@@ -25,6 +25,9 @@
     "push": true,
     "pushArgs": ""
   },
+  "github": {
+    "release": true
+  },
   "prompt": {
     "src": {
       "status": false,
