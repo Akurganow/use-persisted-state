@@ -1,3 +1,5 @@
+## [0.0.5](https://github.com/Akurganow/use-persisted-state/compare/0.0.4...0.0.5) (2019-09-06)
+
 ## [0.0.4](https://github.com/Akurganow/use-persisted-state/compare/0.0.3...0.0.4) (2019-09-06)
 
 

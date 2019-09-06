@@ -6,9 +6,16 @@
   "preReleaseId": null,
   "buildCommand": false,
   "safeBump": false,
-  "requireCleanWorkingDir": false,
-  "requireUpstream": true,
   "src": {
+    "beforeStartCommand": false,
+    "afterReleaseCommand": false
+  },
+  "npm": {
+    "publish": true
+  },
+  "git": {
+    "requireUpstream": true,
+    "requireCleanWorkingDir": false,
     "commit": true,
     "commitMessage": "Release %s",
     "commitArgs": "",
@@ -16,12 +23,7 @@
     "tagName": "v%s",
     "tagAnnotation": "Release %s",
     "push": true,
-    "pushArgs": "",
-    "beforeStartCommand": false,
-    "afterReleaseCommand": false
-  },
-  "npm": {
-    "publish": false
+    "pushArgs": ""
   },
   "prompt": {
     "src": {
