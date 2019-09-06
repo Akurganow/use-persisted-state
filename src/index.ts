@@ -6,7 +6,7 @@ type UsePersistedState<T> = [T, (value: T | ((previousState: T) => T)) => void]
 
 export default function createPersistedState(
   storageKey: string,
-  storage: Storage = window.localStorage,
+  storage: Storage = window.localStorage
 ): [<T>(key: string, initialValue: T) => UsePersistedState<T>, () => void] {
   const safeStorageKey = `persisted_state_hook:${storageKey}`
   const clear = (): void => {
@@ -14,17 +14,20 @@ export default function createPersistedState(
     window.dispatchEvent(new StorageEvent('storage', { key: safeStorageKey }))
   }
 
-  let initialPersist = storage.getItem(safeStorageKey)
-
-  initialPersist = initialPersist ? JSON.parse(initialPersist) : {}
-
   const usePersistedState = <T>(key: string, initialValue: T): UsePersistedState<T> => {
+    let initialPersist: { [x: string]: unknown }
+
+    try {
+      const persist = storage.getItem(safeStorageKey)
+      initialPersist = persist ? JSON.parse(persist) : {}
+    } catch (ignore) {
+      initialPersist = {}
+    } // eslint-disable-line no-empty
+
     let initialOrPersistedValue = initialValue
 
     if (initialPersist) {
-      try {
-        initialOrPersistedValue = initialPersist[key] || initialValue
-      } catch (ignore) {} // eslint-disable-line no-empty
+      initialOrPersistedValue = (initialPersist[key] as T) || initialValue
     }
 
     const [state, setState] = React.useState<T>(initialOrPersistedValue)
@@ -47,7 +50,7 @@ export default function createPersistedState(
       const newItem = JSON.stringify(
         Object.assign(persist, {
           [key]: newValue,
-        }),
+        })
       )
 
       storage.setItem(safeStorageKey, newItem)
