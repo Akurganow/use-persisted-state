@@ -22,10 +22,10 @@ export default function App() {
 
 ```
 
-##Requirement
+## Requirement
 To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater which includes Hooks.
 
-##Clear Storage
+## Clear Storage
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
 
@@ -91,5 +91,5 @@ export default function App() {
 
 ```
 
-##ToDo
+## ToDo
 - Support **async** storage
