@@ -26,7 +26,7 @@ export default function createPersistedState(
 
     let initialOrPersistedValue = initialValue
 
-    if (initialPersist) {
+    if (initialPersist && initialPersist[key]) {
       initialOrPersistedValue = (initialPersist[key] as T) || initialValue
     }
 
@@ -61,7 +61,7 @@ export default function createPersistedState(
       const handleStorage = (event: StorageEvent): void => {
         if (event.key === safeStorageKey) {
           const newState = JSON.parse(event.newValue as string)
-          const newValue = newState ? newState[key] : initialValue
+          const newValue = newState && newState[key] ? newState[key] : initialValue
 
           setState(newValue)
         }
