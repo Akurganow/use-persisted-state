@@ -1,3 +1,10 @@
+## [0.0.8](https://github.com/Akurganow/use-persisted-state/compare/v0.0.7...v0.0.8) (2019-09-09)
+
+
+### Bug Fixes
+
+* **empty key:** check that key in persisted storage ([aae8daa](https://github.com/Akurganow/use-persisted-state/commit/aae8daa))
+
 ## [0.0.7](https://github.com/Akurganow/use-persisted-state/compare/v0.0.5...v0.0.7) (2019-09-06)
 
 ## [0.0.6](https://github.com/Akurganow/use-persisted-state/compare/v0.0.5...v0.0.6) (2019-09-06)
