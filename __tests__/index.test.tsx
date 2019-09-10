@@ -74,4 +74,11 @@ describe('Integration Tests', () => {
 
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
   })
+
+  it('Should clear persisted state', () => {
+    const initialValue = 0
+    const testComponentId = 'test_count_component'
+    const testButtonId = 'test_count_button'
+    const clearButtonId = 'test_clear_button'
+  })
 })
