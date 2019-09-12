@@ -1,4 +1,4 @@
-#usePersistedState
+# usePersistedState
 
 Persists the state to localStorage, sessionStorage or anything else that implements `getItem`, `setItem` and `removeItem`
 
