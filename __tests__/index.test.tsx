@@ -106,7 +106,7 @@ describe('Integration Tests', () => {
           }}
           data-testid={clearButtonId}
         >
-          Test Button
+          Clear Button
         </button>
       )
     }
