@@ -55,8 +55,6 @@ describe('Integration Tests', () => {
       return (
         <button
           onClick={() => {
-            console.log('click')
-
             setCount(prev => prev + 1)
           }}
           data-testid={testButtonId}
@@ -75,10 +73,52 @@ describe('Integration Tests', () => {
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
   })
 
-  it('Should clear persisted state', () => {
+  it('Should clear persisted state', async () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
     const clearButtonId = 'test_clear_button'
+
+    const Component = () => {
+      const [count] = usePersistedState('count', initialValue)
+
+      return <span data-testid={testComponentId}>{count}</span>
+    }
+    const TestButton = () => {
+      const [, setCount] = usePersistedState('count', initialValue)
+
+      return (
+        <button
+          onClick={() => {
+            setCount(prev => prev + 1)
+          }}
+          data-testid={testButtonId}
+        >
+          Test Button
+        </button>
+      )
+    }
+    const ClearButton = () => {
+      return (
+        <button
+          onClick={() => {
+            clear()
+          }}
+          data-testid={clearButtonId}
+        >
+          Test Button
+        </button>
+      )
+    }
+
+    const testButton = render(<TestButton />)
+    const clearButton = render(<ClearButton />)
+
+    await wait(() => fireEvent.click(testButton.getByTestId(testButtonId)))
+    await wait(() => fireEvent.click(clearButton.getByTestId(clearButtonId)))
+
+    const testComponent = render(<Component />)
+
+    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
   })
 })
