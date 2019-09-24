@@ -3,6 +3,7 @@
 Persists the state to localStorage, sessionStorage or anything else that implements `getItem`, `setItem` and `removeItem`
 
 ## Example
+
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
 
@@ -21,6 +22,9 @@ export default function App() {
 }
 
 ```
+
+Little bit closer to real life:
+[![Edit @plq/use-persisted-state](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/plquse-persisted-state-ob2od?fontsize=14)
 
 ## Requirement
 To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater which includes Hooks.
