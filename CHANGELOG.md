@@ -1,3 +1,19 @@
+# [0.1.0](https://github.com/Akurganow/use-persisted-state/compare/v0.0.10...v0.1.0) (2019-09-24)
+
+
+### Bug Fixes
+
+* **actions:** comand name ([06160e7](https://github.com/Akurganow/use-persisted-state/commit/06160e7))
+* **package:** email ([18c2bd3](https://github.com/Akurganow/use-persisted-state/commit/18c2bd3))
+* **tests:** button text ([35bd20d](https://github.com/Akurganow/use-persisted-state/commit/35bd20d))
+
+
+### Features
+
+* **lint:** init ([f54e050](https://github.com/Akurganow/use-persisted-state/commit/f54e050))
+* **readme:** add codesandbox example ([d161824](https://github.com/Akurganow/use-persisted-state/commit/d161824))
+* **tests:** add clear test ([e119c94](https://github.com/Akurganow/use-persisted-state/commit/e119c94))
+
 ## [0.0.10](https://github.com/Akurganow/use-persisted-state/compare/v0.0.9...v0.0.10) (2019-09-10)
 
 
