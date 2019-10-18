@@ -24,6 +24,7 @@ export default function App() {
 ```
 
 Little bit closer to real life:
+
 [![Edit @plq/use-persisted-state](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/plquse-persisted-state-ob2od?fontsize=14)
 
 ## Requirement
