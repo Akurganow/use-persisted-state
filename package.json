@@ -1,5 +1,5 @@
 {
-  "name": "@Akurganow/use-persisted-state",
+  "name": "@plq/use-persisted-state",
   "version": "0.1.0",
   "description": "useState hook with persistance in storage",
   "main": "lib/index.js",
