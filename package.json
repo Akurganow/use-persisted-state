@@ -1,6 +1,6 @@
 {
   "name": "@plq/use-persisted-state",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "useState hook with persistance in storage",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -35,8 +35,7 @@
   "author": "Alex Kurganov <me@akurganow.ru>",
   "license": "MIT",
   "publishConfig": {
-    "access": "public",
-    "registry": "https://npm.pkg.github.com/"
+    "access": "public"
   },
   "bugs": {
     "url": "https://github.com/Akurganow/use-persisted-state/issues"
