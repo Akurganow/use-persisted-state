@@ -27,6 +27,7 @@ module.exports = {
     '@typescript-eslint/indent': [0],
     '@typescript-eslint/camelcase': [0],
     '@typescript-eslint/explicit-function-return-type': [0],
+    '@typescript-eslint/ban-types': [0],
     'arrow-parens': [2, 'as-needed', { requireForBlockBody: false }],
     'no-use-before-define': [1],
     'camelcase': [0],
