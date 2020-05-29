@@ -8,6 +8,7 @@ describe('Integration Tests', () => {
   afterEach(() => {
     cleanup()
     clear()
+    localStorage.clear()
   })
 
   it('Component should rerender from change to local storage', async () => {

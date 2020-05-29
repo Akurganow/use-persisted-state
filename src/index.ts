@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useState, useEffect } from 'react'
 
 import isFunction from './utils/is-function'
 
@@ -30,7 +30,7 @@ export default function createPersistedState(
       initialOrPersistedValue = (initialPersist[key] as T) || initialValue
     }
 
-    const [state, setState] = React.useState<T>(initialOrPersistedValue)
+    const [state, setState] = useState<T>(initialOrPersistedValue)
 
     const setPersistedState = (newState: React.SetStateAction<T>): void => {
       let newValue
@@ -57,13 +57,15 @@ export default function createPersistedState(
       window.dispatchEvent(new StorageEvent('storage', { key: safeStorageKey, newValue: newItem }))
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
       const handleStorage = (event: StorageEvent): void => {
         if (event.key === safeStorageKey) {
           const newState = JSON.parse(event.newValue as string)
-          const newValue = newState && key in newState ? newState[key] : initialValue
+          const newValue = newState && key in newState ? newState[key] as T : null
 
-          setState(newValue)
+          if (newValue && newValue !== initialValue) {
+            setState(newValue)
+          }
         }
       }
 
