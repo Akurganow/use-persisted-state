@@ -1,3 +1,5 @@
+### [0.2.2](https://github.com/Akurganow/use-persisted-state/compare/v0.2.1...v0.2.2) (2020-05-29)
+
 ### [0.2.1](https://github.com/Akurganow/use-persisted-state/compare/v0.2.0...v0.2.1) (2020-05-29)
 
 
