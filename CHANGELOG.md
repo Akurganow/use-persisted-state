@@ -1,3 +1,10 @@
+### [0.2.1](https://github.com/Akurganow/use-persisted-state/compare/v0.2.0...v0.2.1) (2020-05-29)
+
+
+### Bug Fixes
+
+* **init:** don't call setState when init with initialValue ([cb17cfb](https://github.com/Akurganow/use-persisted-state/commit/cb17cfbcdf8731ff7695311b35771c2736a11580))
+
 # [0.2.0](https://github.com/Akurganow/use-persisted-state/compare/v0.1.0...v0.2.0) (2020-05-29)
 
 # [0.1.0](https://github.com/Akurganow/use-persisted-state/compare/v0.0.10...v0.1.0) (2019-09-24)
