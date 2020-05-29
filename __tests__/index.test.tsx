@@ -1,25 +1,26 @@
 import React from 'react'
 import createPersistedState from '../src'
-import { render, fireEvent, cleanup, wait } from '@testing-library/react'
+import { render, fireEvent, cleanup, act, waitFor } from '@testing-library/react'
 
 const [usePersistedState, clear] = createPersistedState('test')
 
-afterEach(() => {
-  cleanup()
-  clear()
-})
-
 describe('Integration Tests', () => {
-  it('Component should rerender from change to local storage', () => {
+  afterEach(() => {
+    cleanup()
+    clear()
+  })
+
+  it('Component should rerender from change to local storage', async () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
 
-    const Component = () => {
+    const Counter = () => {
       const [count] = usePersistedState('count', initialValue)
+
       return <span data-testid={testComponentId}>{count}</span>
     }
-    const TestButton = () => {
+    const Button = () => {
       const [, setCount] = usePersistedState('count', initialValue)
 
       return (
@@ -29,17 +30,19 @@ describe('Integration Tests', () => {
       )
     }
 
-    const testComponent = render(<Component />)
-    const testButton = render(<TestButton />)
+    const testButton = render(<Button />)
+    const testComponent = render(<Counter />)
 
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
 
-    fireEvent.click(testButton.getByTestId(testButtonId))
+    act(() => {
+      fireEvent.click(testButton.getByTestId(testButtonId))
+    })
 
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
   })
 
-  it('Component shold render with persisted state', async () => {
+  it('Component should render with persisted state', async () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -66,7 +69,7 @@ describe('Integration Tests', () => {
 
     const testButton = render(<TestButton />)
 
-    await wait(() => fireEvent.click(testButton.getByTestId(testButtonId)))
+    await act(async () => { await waitFor(() => fireEvent.click(testButton.getByTestId(testButtonId))) })
 
     const testComponent = render(<Component />)
 
@@ -114,8 +117,10 @@ describe('Integration Tests', () => {
     const testButton = render(<TestButton />)
     const clearButton = render(<ClearButton />)
 
-    await wait(() => fireEvent.click(testButton.getByTestId(testButtonId)))
-    await wait(() => fireEvent.click(clearButton.getByTestId(clearButtonId)))
+    await act(async () => {
+      await waitFor(() => fireEvent.click(testButton.getByTestId(testButtonId)))
+      await waitFor(() => fireEvent.click(clearButton.getByTestId(clearButtonId)))
+    })
 
     const testComponent = render(<Component />)
 
