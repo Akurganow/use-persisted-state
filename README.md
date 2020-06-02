@@ -9,7 +9,7 @@ Persists the state to localStorage, sessionStorage or anything else that impleme
 - The state factory takes as many keys as needed, so you don't have to call the factory for each variable
 - Written with the Typescript, the defenitions go with the library
 - No dependencies
-- Only 645B (minified and gziped)
+- Less than 1Kb (minified and gziped)
 
 ## Example
 
