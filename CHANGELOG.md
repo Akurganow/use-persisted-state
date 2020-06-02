@@ -1,3 +1,10 @@
+### [0.2.4](https://github.com/Akurganow/use-persisted-state/compare/v0.2.3...v0.2.4) (2020-06-02)
+
+
+### Bug Fixes
+
+* **storage listener:** listen key remove ([76d4bf5](https://github.com/Akurganow/use-persisted-state/commit/76d4bf5227920e0739fc8292ffc7e657bb03f7c5))
+
 ### [0.2.3](https://github.com/Akurganow/use-persisted-state/compare/v0.2.2...v0.2.3) (2020-06-02)
 
 
