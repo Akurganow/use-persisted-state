@@ -1,3 +1,10 @@
+### [0.2.3](https://github.com/Akurganow/use-persisted-state/compare/v0.2.2...v0.2.3) (2020-06-02)
+
+
+### Bug Fixes
+
+* **storage listener:** check values is not null ([109b7a1](https://github.com/Akurganow/use-persisted-state/commit/109b7a18f433f8b19f1c5e857c6c3021b26a0ad5))
+
 ### [0.2.2](https://github.com/Akurganow/use-persisted-state/compare/v0.2.1...v0.2.2) (2020-05-29)
 
 ### [0.2.1](https://github.com/Akurganow/use-persisted-state/compare/v0.2.0...v0.2.1) (2020-05-29)
