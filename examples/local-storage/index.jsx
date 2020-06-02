@@ -4,20 +4,45 @@ import { render } from 'react-dom'
 import createPersistedState from '../../lib'
 
 const [usePersistedState, clear] = createPersistedState('simple_example')
+const initialValue = 0
 
-function App() {
-  const [count, setCount] = usePersistedState('count', 0)
+function Actions() {
+  const [, setCount] = usePersistedState('count', initialValue)
 
   return (
     <div>
-      {count}{' '}
+      <button
+        onClick={() => {
+          setCount(prevCount => prevCount - 1)
+        }}>
+        -
+      </button>
+      <button onClick={() => { clear() }}>Clear</button>
+      <button onClick={() => { setCount(initialValue) }}>Initial</button>
       <button
         onClick={() => {
           setCount(prevCount => prevCount + 1)
         }}>
         +
       </button>
-      <button onClick={() => { clear() }}>Clear</button>
+    </div>
+  )
+}
+
+function Count() {
+  const [count] = usePersistedState('count', initialValue)
+
+  return (
+    <div>{count}</div>
+  )
+
+}
+
+function App() {
+  return (
+    <div>
+      <Count />
+      <Actions />
     </div>
   )
 }
