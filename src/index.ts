@@ -10,8 +10,9 @@ export default function createPersistedState(
 ): [<T>(key: string, initialValue: T) => UsePersistedState<T>, () => void] {
   const safeStorageKey = `persisted_state_hook:${storageKey}`
   const clear = (): void => {
+    const oldValue = storage.getItem(safeStorageKey)
     storage.removeItem(safeStorageKey)
-    window.dispatchEvent(new StorageEvent('storage', { key: safeStorageKey }))
+    window.dispatchEvent(new StorageEvent('storage', { key: safeStorageKey, oldValue }))
   }
 
   const usePersistedState = <T>(key: string, initialValue: T): UsePersistedState<T> => {
