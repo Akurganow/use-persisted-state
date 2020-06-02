@@ -1,3 +1,10 @@
+### [0.2.5](https://github.com/Akurganow/use-persisted-state/compare/v0.2.4...v0.2.5) (2020-06-02)
+
+
+### Bug Fixes
+
+* **clear:** dispatch event with old value ([38e05ef](https://github.com/Akurganow/use-persisted-state/commit/38e05ef77e88bc2de84b2352f63726b60096bad6))
+
 ### [0.2.4](https://github.com/Akurganow/use-persisted-state/compare/v0.2.3...v0.2.4) (2020-06-02)
 
 
