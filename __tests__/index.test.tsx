@@ -5,9 +5,8 @@ import { render, fireEvent, cleanup, act, waitFor } from '@testing-library/react
 const [usePersistedState, clear] = createPersistedState('test')
 
 describe('Integration Tests', () => {
-  afterEach(() => {
+  beforeEach(() => {
     cleanup()
-    clear()
     localStorage.clear()
   })
 
