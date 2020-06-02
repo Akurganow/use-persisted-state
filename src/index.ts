@@ -59,6 +59,20 @@ export default function createPersistedState(
 
     useEffect(() => {
       const handleStorage = (event: StorageEvent): void => {
+        if (event.key === safeStorageKey && event.newValue === null && event.oldValue !== null) {
+          let oldState = null
+
+          try {
+            oldState = JSON.parse(event.oldValue)
+          } catch (e) {
+            console.error('use-persisted-state: Can\'t parse old value from storage', e)
+          }
+
+          const oldValue = oldState && key in oldState ? oldState[key] as T : null
+
+          if (oldValue !== initialValue) setState(initialValue)
+        }
+
         if (event.key === safeStorageKey && event.newValue !== null) {
           let newState = null
 
