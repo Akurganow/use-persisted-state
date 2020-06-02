@@ -1,6 +1,6 @@
 import React from 'react'
 import createPersistedState from '../src'
-import { render, fireEvent, cleanup, act, waitFor } from '@testing-library/react'
+import { render, fireEvent, cleanup, act } from '@testing-library/react'
 
 const [usePersistedState, clear] = createPersistedState('test')
 
@@ -10,7 +10,7 @@ describe('Integration Tests', () => {
     localStorage.clear()
   })
 
-  it('Component should rerender from change to local storage', async () => {
+  it('Component should rerender from change to local storage', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -45,7 +45,7 @@ describe('Integration Tests', () => {
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
   })
 
-  it('Component should render with persisted state', async () => {
+  it('Component should render with persisted state', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -72,14 +72,14 @@ describe('Integration Tests', () => {
 
     const testButton = render(<TestButton />)
 
-    await act(async () => { await waitFor(() => fireEvent.click(testButton.getByTestId(testButtonId))) })
+    act(() => { fireEvent.click(testButton.getByTestId(testButtonId)) })
 
     const testComponent = render(<Component />)
 
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
   })
 
-  it('Should clear persisted state', async () => {
+  it('Should clear persisted state', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -119,18 +119,24 @@ describe('Integration Tests', () => {
 
     const testButton = render(<TestButton />)
     const clearButton = render(<ClearButton />)
+    const testComponent = render(<Component />)
 
-    await act(async () => {
-      await waitFor(() => fireEvent.click(testButton.getByTestId(testButtonId)))
-      await waitFor(() => fireEvent.click(clearButton.getByTestId(clearButtonId)))
+    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
+
+    act(() => {
+      fireEvent.click(testButton.getByTestId(testButtonId))
     })
 
-    const testComponent = render(<Component />)
+    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
+
+    act(() => {
+      fireEvent.click(clearButton.getByTestId(clearButtonId))
+    })
 
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
   })
 
-  it('Should change state when set initial value', async () => {
+  it('Should change state when set initial value', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -181,8 +187,6 @@ describe('Integration Tests', () => {
     act(() => {
       fireEvent.click(testInitialButton.getByTestId(testInitialButtonId))
     })
-
-    console.log(localStorage.__STORE__);
 
     expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
   })

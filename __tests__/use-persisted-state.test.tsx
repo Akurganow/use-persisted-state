@@ -4,11 +4,11 @@ import { renderHook, cleanup, act } from '@testing-library/react-hooks'
 const [usePersistedState, clear] = createPersistedState('test')
 
 describe('hook defined correctly', () => {
-  afterEach(() => {
+  beforeEach(() => {
     cleanup()
     clear()
     localStorage.clear()
-  });
+  })
 
   it('is callable', () => {
     const { result } = renderHook(() => usePersistedState('foo', 'bar'))
