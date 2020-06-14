@@ -24,9 +24,12 @@ module.exports = {
   rules: {
     'indent': [0, 0],
     'semi': [2, 'never'],
+    'quotes': ['error', 'single'],
+    'block-spacing': [2, 'always'],
     '@typescript-eslint/indent': [0],
     '@typescript-eslint/camelcase': [0],
     '@typescript-eslint/explicit-function-return-type': [0],
+    '@typescript-eslint/no-explicit-any': [0],
     '@typescript-eslint/ban-types': [0],
     'arrow-parens': [2, 'as-needed', { requireForBlockBody: false }],
     'no-use-before-define': [1],
@@ -74,9 +77,9 @@ module.exports = {
       },
     ],
   },
-  "settings": {
-    "react": {
-      "version": "detect"
-    }
-  }
+  settings: {
+    react: {
+      version: "detect",
+    },
+  },
 }
