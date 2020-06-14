@@ -1,7 +1,8 @@
-import createPersistedState from '../src'
+import { createPersistedState } from '../src'
+import storage from '../src/storages/local-storage'
 import { renderHook, cleanup, act } from '@testing-library/react-hooks'
 
-const [usePersistedState, clear] = createPersistedState('test')
+const [usePersistedState, clear] = createPersistedState('test', storage)
 
 describe('hook defined correctly', () => {
   beforeEach(() => {

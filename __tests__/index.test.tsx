@@ -1,13 +1,31 @@
 import React from 'react'
 import createPersistedState from '../src'
 import { render, fireEvent, cleanup, act } from '@testing-library/react'
+import { renderHook, act as hookAct } from '@testing-library/react-hooks'
 
-const [usePersistedState, clear] = createPersistedState('test')
+import storage from '../src/storages/local-storage'
+import { local as asyncStorage } from '../src/storages/browser-storage'
+
+const [useSyncPersistedState, clearSync] = createPersistedState('test', storage)
+const [useAsyncPersistedState, clearAsync] = createPersistedState('test', asyncStorage)
 
 describe('Integration Tests', () => {
   beforeEach(() => {
     cleanup()
     localStorage.clear()
+  })
+
+  it('should create async hook if provided async storage', async function () {
+    const { result } = renderHook(() => useAsyncPersistedState('foo', 'bar'))
+
+    hookAct(() => {
+      const set = result.current[1]('baz')
+      expect(set).resolves.toEqual(undefined)
+    })
+
+    hookAct(() => {
+      expect(clearAsync()).resolves.toEqual(undefined)
+    })
   })
 
   it('Component should rerender from change to local storage', () => {
@@ -16,12 +34,12 @@ describe('Integration Tests', () => {
     const testButtonId = 'test_count_button'
 
     const Counter = () => {
-      const [count] = usePersistedState('count', initialValue)
+      const [count] = useSyncPersistedState('count', initialValue)
 
       return <span data-testid={testComponentId}>{count}</span>
     }
     const Button = () => {
-      const [, setCount] = usePersistedState('count', initialValue)
+      const [, setCount] = useSyncPersistedState('count', initialValue)
 
       return (
         <button
@@ -51,12 +69,12 @@ describe('Integration Tests', () => {
     const testButtonId = 'test_count_button'
 
     const Component = () => {
-      const [count] = usePersistedState('count', initialValue)
+      const [count] = useSyncPersistedState('count', initialValue)
 
       return <span data-testid={testComponentId}>{count}</span>
     }
     const TestButton = () => {
-      const [, setCount] = usePersistedState('count', initialValue)
+      const [, setCount] = useSyncPersistedState('count', initialValue)
 
       return (
         <button
@@ -86,12 +104,12 @@ describe('Integration Tests', () => {
     const clearButtonId = 'test_clear_button'
 
     const Component = () => {
-      const [count] = usePersistedState('count', initialValue)
+      const [count] = useSyncPersistedState('count', initialValue)
 
       return <span data-testid={testComponentId}>{count}</span>
     }
     const TestButton = () => {
-      const [, setCount] = usePersistedState('count', initialValue)
+      const [, setCount] = useSyncPersistedState('count', initialValue)
 
       return (
         <button
@@ -108,7 +126,7 @@ describe('Integration Tests', () => {
       return (
         <button
           onClick={() => {
-            clear()
+            clearSync()
           }}
           data-testid={clearButtonId}
         >
@@ -143,12 +161,12 @@ describe('Integration Tests', () => {
     const testInitialButtonId = 'test_count_initial_button'
 
     const Counter = () => {
-      const [count] = usePersistedState('count', initialValue)
+      const [count] = useSyncPersistedState('count', initialValue)
 
       return <span data-testid={testComponentId}>{count}</span>
     }
     const Button = () => {
-      const [, setCount] = usePersistedState('count', initialValue)
+      const [, setCount] = useSyncPersistedState('count', initialValue)
 
       return (
         <button
@@ -160,7 +178,7 @@ describe('Integration Tests', () => {
       )
     }
     const InitialButton = () => {
-      const [, setCount] = usePersistedState('count', initialValue)
+      const [, setCount] = useSyncPersistedState('count', initialValue)
 
       return (
         <button
