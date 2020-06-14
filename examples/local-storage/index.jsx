@@ -2,8 +2,9 @@ import React from 'react'
 import { render } from 'react-dom'
 
 import createPersistedState from '../../lib'
+import storage from '../../lib/storages/local-storage'
 
-const [usePersistedState, clear] = createPersistedState('simple_example')
+const [usePersistedState, clear] = createPersistedState('simple_example', storage)
 const initialValue = 0
 
 function Actions() {
