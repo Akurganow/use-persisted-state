@@ -13,7 +13,7 @@ Persists the state to localStorage, sessionStorage or any custom storage
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/storages/local-storage'
+import storage from '@plq/use-persisted-state/lib/storages/local-storage'
 
 const [usePersistedState] = createPersistedState('example', storage)
 
@@ -38,7 +38,7 @@ To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater which 
 ## Clear Storage
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/storages/local-storage'
+import storage from '@plq/use-persisted-state/lib/storages/local-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 
@@ -58,7 +58,7 @@ export default function App() {
 ## Use sessionStorage
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/storages/session-storage'
+import storage from '@plq/use-persisted-state/lib/storages/session-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 ```
@@ -67,7 +67,7 @@ const [usePersistedState, clear] = createPersistedState('example', storage)
 import createPersistedState from '@plq/use-persisted-state'
 // or
 import { createAsyncPersistedState } from '@plq/use-persisted-state'
-import { local } from '@plq/use-persisted-state/storages/browser-storage'
+import { local } from '@plq/use-persisted-state/lib/storages/browser-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', local)
 ```
