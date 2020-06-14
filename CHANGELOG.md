@@ -1,3 +1,12 @@
+## [1.0.0](https://github.com/Akurganow/use-persisted-state/compare/v0.2.5...v1.0.0) (2020-06-14)
+
+
+### Features
+
+* **examples:** add async storage example ([5377681](https://github.com/Akurganow/use-persisted-state/commit/5377681b5db547fb0add701f49f9ad426e6e36f7))
+* **hook:** support async storage ([68195f7](https://github.com/Akurganow/use-persisted-state/commit/68195f7d75dbd58087dd8dc0b38d92c5bbb3837d))
+* **storages:** add storages ([9a8640b](https://github.com/Akurganow/use-persisted-state/commit/9a8640b3dbbb50686ff7b286d35b9707af3428ce))
+
 ### [0.2.5](https://github.com/Akurganow/use-persisted-state/compare/v0.2.4...v0.2.5) (2020-06-02)
 
 
