@@ -24,6 +24,8 @@ export default function createAsyncPersistedState(
     const setPersistedState = async (newState: React.SetStateAction<T>): Promise<void> => {
       const newValue = getNewValue<T>(newState, state)
 
+      setState(newValue)
+
       const persistedItem = await storage.get(safeStorageKey)
       const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
 
