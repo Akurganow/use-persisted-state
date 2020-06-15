@@ -73,7 +73,7 @@ const [usePersistedState, clear] = createPersistedState('example', local)
 ```
 ## Use custom storage
 
-The [storage API](https://github.com/Akurganow/use-persisted-state/blob/master/docs/storage-api.md) is similar to the browser.storage but with a few exceptions
+The [storage API](https://github.com/Akurganow/use-persisted-state/blob/master/docs/storage-api.md) is similar to the browser.storage but with a few differences
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
@@ -87,7 +87,7 @@ onChangeSomeStorage(event => {
       oldValue: event.oldValue,
     },
   }
-    
+
   listeners.forEach(listener => {
     listener(changes)
   })
@@ -106,3 +106,16 @@ const myStorage = {
 
 const [usePersistedState, clear] = createPersistedState('example', myStorage)
 ```
+## Storage adapters
+### [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage) `@plq/use-persisted-state/lib/storages/local-storage`
+  - Useful for average web application
+### [sessionStorage](https://developer.mozilla.org/docs/Web/API/Window/sessionStorage) `@plq/use-persisted-state/lib/storages/session-storage`
+  - Useful for average web application
+### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/lib/storages/browser-storage`
+  - Only for web extensions.
+  - Don't forget to setup [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run extension in Chrome browser.
+  - To use this storage you need to include the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file
+### [chrome.storage](https://developer.chrome.com/apps/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
+  - Only for Chrome based web extensions.
+  - If you develop extension that will be run only in Chrome browser you can use this storage without [polyfill](https://github.com/mozilla/webextension-polyfill).
+  - You must declare the "storage" permission in the [extension manifest](https://developer.chrome.com/apps/manifest) to use this storage.

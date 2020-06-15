@@ -1,9 +1,9 @@
 # Storage
 
-Storage API is similar to the browser.storage but with a few exceptions
+Storage API is similar to the browser.storage but with a few differences
 
 ## Methods
-For async storage all methods should return `Promise` 
+For async storage all methods should return `Promise`
 ### get `(keys: string | string[]) => string | Promise<string>`
 Retrieves one or more items from the storage.
 ### set `(items: { [k: string]: string }) => void | Promise<void>`
