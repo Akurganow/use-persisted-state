@@ -6,7 +6,7 @@ Persists the state to localStorage, sessionStorage or any custom storage
 
 - Persist the state to `localStorage`, `sessionStorage` or almost anything else implements [storage API](https://github.com/Akurganow/use-persisted-state/blob/master/docs/storage-api.md)
 - The state factory takes as many keys as needed, so you don't have to call the factory for each variable
-- Written with the Typescript, the definitions go with the library
+- Written with the TypeScript, the definitions go with the library
 - No dependencies
 
 ## Example
@@ -116,6 +116,6 @@ const [usePersistedState, clear] = createPersistedState('example', myStorage)
   - Don't forget to setup [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run extension in Chrome browser.
   - To use this storage you need to include the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file
 ### [chrome.storage](https://developer.chrome.com/apps/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
-  - Only for Chrome based web extensions.
+  - Only for Chrome-based web extensions.
   - If you develop extension that will be run only in Chrome browser you can use this storage without [polyfill](https://github.com/mozilla/webextension-polyfill).
   - You must declare the "storage" permission in the [extension manifest](https://developer.chrome.com/apps/manifest) to use this storage.
