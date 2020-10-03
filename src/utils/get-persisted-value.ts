@@ -1,6 +1,6 @@
 import isFunction from './is-function'
 
-export default function<T>(key:string, initialValue: T | (() => T), persist: string): T {
+export default function<T>(key:string, initialValue: T | (() => T), persist?: string): T {
   let initialPersist: { [x: string]: unknown }
 
   try {

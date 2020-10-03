@@ -39,12 +39,12 @@ export default (storage: globalThis.Storage): Storage => ({
 
     if (Array.isArray(keys)) {
       keys.forEach(key => {
-        const item = storage.getItem(key)
+        const item = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
 
         if (item) result[key] = item
       })
     } else {
-      const item = storage.getItem(keys)
+      const item = typeof storage !== 'undefined' ? storage.getItem(keys) : undefined
 
       if (item) result[keys] = item
     }
@@ -55,44 +55,50 @@ export default (storage: globalThis.Storage): Storage => ({
     const changes: { [key: string]: StorageChange } = {}
 
     Object.entries(items).forEach(([key, value]) => {
-      const oldValue = storage.getItem(key)
+      const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
 
-      storage.setItem(key, value)
+      if (typeof storage !== 'undefined') {
+        storage.setItem(key, value)
 
-      changes[key] = {
-        oldValue,
-        newValue: value,
+        changes[key] = {
+          oldValue,
+          newValue: value,
+        }
       }
     })
 
-    fireStorageEvent(changes)
+    if (Object.keys(changes).length > 0) fireStorageEvent(changes)
   },
   remove: keys => {
     const changes: { [key: string]: StorageChange } = {}
 
     if (Array.isArray(keys)) {
       keys.forEach(key => {
-        const oldValue = storage.getItem(key)
+        const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
 
-        storage.removeItem(key)
+        if (typeof storage !== 'undefined') {
+          storage.removeItem(key)
 
-        changes[key] = {
-          oldValue,
-          newValue: null,
+          changes[key] = {
+            oldValue,
+            newValue: null,
+          }
         }
       })
     } else {
-      const oldValue = storage.getItem(keys)
+      const oldValue = typeof storage !== 'undefined' ? storage.getItem(keys) : undefined
 
-      storage.removeItem(keys)
+      if (typeof storage !== 'undefined') {
+        storage.removeItem(keys)
 
-      changes[keys] = {
-        oldValue,
-        newValue: null,
+        changes[keys] = {
+          oldValue,
+          newValue: null,
+        }
       }
     }
 
-    fireStorageEvent(changes)
+    if (Object.keys(changes).length > 0) fireStorageEvent(changes)
   },
   onChanged,
 })
