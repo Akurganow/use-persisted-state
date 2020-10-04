@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, {useEffect, useState} from 'react'
 
-import { Storage } from './@types/storage'
-import { UsePersistedState, PersistedState } from './@types/hook'
+import {Storage} from './@types/storage'
+import {PersistedState, UsePersistedState} from './@types/hook'
 
 import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
@@ -19,7 +19,8 @@ export default function createPersistedState(
 
   const usePersistedState = <T>(key: string, initialValue: T): UsePersistedState<T> => {
     const persist = storage.get(safeStorageKey)
-    const initialOrPersistedValue = getPersistedValue<T>(key, initialValue, persist[safeStorageKey])
+    const persistedState = persist[safeStorageKey]
+    const initialOrPersistedValue = getPersistedValue<T>(key, initialValue, persistedState)
 
     const [state, setState] = useState<T>(initialOrPersistedValue)
 
@@ -33,6 +34,12 @@ export default function createPersistedState(
 
       storage.set({[safeStorageKey]: newItem})
     }
+
+    useEffect(() => {
+      const initialOrPersistedValue = getPersistedValue<T>(key, initialValue, persistedState)
+
+      setState(initialOrPersistedValue)
+    }, [initialValue, key, persistedState])
 
     useStorageHandler<T>(key, safeStorageKey, setState, storage, initialValue)
 

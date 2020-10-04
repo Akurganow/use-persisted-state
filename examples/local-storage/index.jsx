@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { render } from 'react-dom'
 
 import createPersistedState from '../../lib'
@@ -8,10 +8,23 @@ const [usePersistedState, clear] = createPersistedState('simple_example', storag
 const initialValue = 0
 
 function Actions() {
-  const [, setCount] = usePersistedState('count', initialValue)
+  const [key, setKey] = useState('count')
+  const [, setCount] = usePersistedState(key, initialValue)
+
+  const handleChange = event => {
+    const { value } = event.target
+
+    setKey(value)
+  }
 
   return (
     <div>
+      <div>
+        <select onChange={handleChange} defaultValue="count">
+          <option value="count">Count</option>
+          <option value="number">Number</option>
+        </select>
+      </div>
       <button
         onClick={() => {
           setCount(prevCount => prevCount - 1)
@@ -32,9 +45,10 @@ function Actions() {
 
 function Count() {
   const [count] = usePersistedState('count', initialValue)
+  const [number] = usePersistedState('number', initialValue)
 
   return (
-    <div>{count}</div>
+    <div>Count:{count} Number:{number}</div>
   )
 
 }
@@ -43,6 +57,7 @@ function App() {
   return (
     <div>
       <Count />
+      <hr />
       <Actions />
     </div>
   )

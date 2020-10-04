@@ -5,8 +5,8 @@ import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
 
-import { AsyncStorage } from './@types/storage'
-import { UsePersistedState, PersistedState } from './@types/hook'
+import {AsyncStorage} from './@types/storage'
+import {PersistedState, UsePersistedState} from './@types/hook'
 
 export default function createAsyncPersistedState(
   storageKey: string,
@@ -29,13 +29,14 @@ export default function createAsyncPersistedState(
       const persistedItem = await storage.get(safeStorageKey)
       const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
 
-      await storage.set({ [safeStorageKey]: newItem })
+      await storage.set({[safeStorageKey]: newItem})
     }
 
     useEffect(() => {
       const setInitialValue = async () => {
         const persist = await storage.get(safeStorageKey)
-        const initialOrPersistedValue = getPersistedValue<T>(key, initialValue, persist[safeStorageKey])
+        const persistedState = persist[safeStorageKey]
+        const initialOrPersistedValue = getPersistedValue<T>(key, initialValue, persistedState)
 
         setState(initialOrPersistedValue)
       }

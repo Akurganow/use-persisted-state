@@ -31,7 +31,7 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': [0],
     '@typescript-eslint/no-explicit-any': [0],
     '@typescript-eslint/ban-types': [0],
-    'arrow-parens': [2, 'as-needed', { requireForBlockBody: false }],
+    'arrow-parens': [2, 'as-needed', {requireForBlockBody: false}],
     'no-use-before-define': [1],
     'camelcase': [0],
     'quote-props': [2, 'consistent-as-needed'],
@@ -41,7 +41,7 @@ module.exports = {
     'implicit-arrow-linebreak': [0],
     'no-underscore-dangle': [0],
     'comma-dangle': [2, 'always-multiline'],
-    'max-len': [2, 120, { ignoreComments: true, ignoreUrls: true }],
+    'max-len': [2, 120, {ignoreComments: true, ignoreUrls: true}],
     'react/jsx-filename-extension': [0],
     'react/prefer-stateless-function': [0],
     'react/require-default-props': [0],
@@ -56,7 +56,7 @@ module.exports = {
     'react/destructuring-assignment': [0],
     'react/no-access-state-in-setstate': [0],
     'react/jsx-first-prop-new-line': [2, 'multiline'],
-    'react/jsx-max-props-per-line': [2, { maximum: 1, when: 'multiline' }],
+    'react/jsx-max-props-per-line': [2, {maximum: 1, when: 'multiline'}],
     'react/jsx-one-expression-per-line': [0],
     'react/jsx-props-no-spreading': [0],
     'react/jsx-wrap-multilines': [
@@ -79,7 +79,7 @@ module.exports = {
   },
   settings: {
     react: {
-      version: "detect",
+      version: 'detect',
     },
   },
 }
