@@ -1,3 +1,11 @@
+## [1.1.0](https://github.com/Akurganow/use-persisted-state/compare/v1.0.2...v1.1.0) (2020-10-04)
+
+
+### Features
+
+* Support SSR. Closes [#196](https://github.com/Akurganow/use-persisted-state/issues/196) ([9e17280](https://github.com/Akurganow/use-persisted-state/commit/9e1728038976686f679e4bf867c8150a66d14293))
+* Watch key changes. Closes [#187](https://github.com/Akurganow/use-persisted-state/issues/187) ([f3699aa](https://github.com/Akurganow/use-persisted-state/commit/f3699aa46b24c9e55603b2f6c3f705eeb3c78d89))
+
 ### [1.0.2](https://github.com/Akurganow/use-persisted-state/compare/v1.0.1...v1.0.2) (2020-06-15)
 
 
