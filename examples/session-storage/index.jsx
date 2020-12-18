@@ -4,7 +4,7 @@ import { render } from 'react-dom'
 import createPersistedState from '../../lib'
 import storage from '../../lib/storages/session-storage'
 
-const [usePersistedState, clear] = createPersistedState('simple_example', storage)
+const [usePersistedState, clear] = createPersistedState('session_example', storage)
 const initialValue = 0
 
 function Actions() {

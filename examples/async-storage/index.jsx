@@ -102,7 +102,7 @@ const storage = {
   },
 }
 
-const [usePersistedState, clear] = createPersistedState('simple_example', storage)
+const [usePersistedState, clear] = createPersistedState('async_example', storage)
 const initialValue = 0
 
 function Actions() {

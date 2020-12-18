@@ -113,7 +113,7 @@ const [usePersistedState, clear] = createPersistedState('example', myStorage)
   - Useful for average web application
 ### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/lib/storages/browser-storage`
   - Only for web extensions.
-  - Don't forget to setup [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run extension in Chrome browser.
+  - Don't forget to set up [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run extension in Chrome browser.
   - To use this storage you need to include the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file
 ### [chrome.storage](https://developer.chrome.com/apps/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
   - Only for Chrome-based web extensions.

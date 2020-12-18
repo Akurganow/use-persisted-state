@@ -2,7 +2,7 @@ import isPromise from '../src/utils/is-promise'
 
 describe('is-promise', () => {
   it('should return true if promise', function () {
-    const fn1 = new Promise(resolve => { resolve() })
+    const fn1 = new Promise<void>(resolve => { resolve() })
     const fn2 = async function () { return undefined }
 
     expect(isPromise(fn1)).toBe(true)
