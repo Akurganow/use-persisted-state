@@ -1,3 +1,10 @@
+### [1.1.2](https://github.com/Akurganow/use-persisted-state/compare/v1.1.1...v1.1.2) (2021-02-09)
+
+
+### Bug Fixes
+
+* **toString:** IE11 fix (TypeError: Invalid calling object) ([1514cd6](https://github.com/Akurganow/use-persisted-state/commit/1514cd6e520a60163b5a834bf337dc679b12530c))
+
 ### [1.1.1](https://github.com/Akurganow/use-persisted-state/compare/v1.1.0...v1.1.1) (2020-12-18)
 
 ## [1.1.0](https://github.com/Akurganow/use-persisted-state/compare/v1.0.2...v1.1.0) (2020-10-04)
