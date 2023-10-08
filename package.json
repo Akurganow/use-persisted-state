@@ -26,6 +26,21 @@
     "type": "git",
     "url": "git+https://github.com/Akurganow/use-persisted-state.git"
   },
+  "release-it": {
+    "hooks": {
+      "before:init": [
+        "npm run lint",
+        "npm test"
+      ],
+      "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "conventionalcommits",
+        "infile": "CHANGELOG.md"
+      }
+    }
+  },
   "keywords": [
     "react",
     "hook",
