@@ -1,3 +1,15 @@
+
+
+## [1.1.3](https://github.com/Akurganow/use-persisted-state/compare/v1.1.2...v1.1.3) (2023-10-08)
+
+
+### Bug Fixes
+
+* Github actions main job ([4dd9df1](https://github.com/Akurganow/use-persisted-state/commit/4dd9df14fa7db3fdba527faef2d1f61b83c98c99))
+* Github actions main job ([839aea7](https://github.com/Akurganow/use-persisted-state/commit/839aea71db9b0423c2aadd301bfb09eaaa01c2aa))
+* Github actions main job ([1b40f22](https://github.com/Akurganow/use-persisted-state/commit/1b40f221c6635fbb38c9d9ea4412c18be709b279))
+* useStorageHandler missing useEffect deps ([3266ba3](https://github.com/Akurganow/use-persisted-state/commit/3266ba3a80f0ab6449ba9b8ad1ee404e64882b3c))
+
 ### [1.1.2](https://github.com/Akurganow/use-persisted-state/compare/v1.1.1...v1.1.2) (2021-02-09)
 
 
