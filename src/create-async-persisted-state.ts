@@ -8,9 +8,9 @@ import getPersistedValue from './utils/get-persisted-value'
 import {AsyncStorage} from './@types/storage'
 import {PersistedState, UsePersistedState} from './@types/hook'
 
-export default function createAsyncPersistedState(
+export default function createAsyncPersistedState<S extends AsyncStorage>(
   storageKey: string,
-  storage: AsyncStorage,
+  storage: S,
 ): [PersistedState, () => Promise<void>] {
   const safeStorageKey = `persisted_state_hook:${storageKey}`
 

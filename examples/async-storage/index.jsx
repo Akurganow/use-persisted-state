@@ -1,5 +1,5 @@
 import React from 'react'
-import { render } from 'react-dom'
+import {createRoot} from 'react-dom/client'
 
 import createPersistedState from '../../lib'
 
@@ -146,6 +146,7 @@ function App() {
   )
 }
 
-const root = document.getElementById('root')
+const container = document.getElementById('root')
+const root = createRoot(container)
 
-render(<App />, root)
+root.render(<App />)
