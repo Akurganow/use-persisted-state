@@ -1,7 +1,7 @@
 import { createPersistedState } from '../src'
 import storage from '../src/storages/local-storage'
 import createStorage from '../src/utils/create-web-storage'
-import { renderHook, cleanup, act } from '@testing-library/react-hooks'
+import { renderHook, cleanup, act } from '@testing-library/react'
 
 describe('hook defined correctly', () => {
   const [usePersistedState, clear] = createPersistedState('test', storage)
@@ -12,7 +12,7 @@ describe('hook defined correctly', () => {
     localStorage.clear()
   })
 
-  it('is callable', () => {
+  test('is callable', () => {
     const { result } = renderHook(() => usePersistedState('foo', 'bar'))
 
     expect(usePersistedState).toBeDefined()
@@ -21,7 +21,7 @@ describe('hook defined correctly', () => {
     expect(localStorage.setItem).not.toHaveBeenCalled()
   })
 
-  it('localstorage called correctly', () => {
+  test('localstorage called correctly', () => {
     const { result } = renderHook(() => usePersistedState('foo', 'bar'))
     const expected = JSON.stringify({ foo: 'baz' })
 
@@ -38,7 +38,7 @@ describe('hook works on SSR', () => {
   const testingSSRStorage = createStorage(undefined as unknown as Storage)
   const [usePersistedState, clear] = createPersistedState('test', testingSSRStorage)
 
-  it('is callable', () => {
+  test('is callable', () => {
     const { result } = renderHook(() => usePersistedState('foo', 'bar'))
 
     expect(usePersistedState).toBeDefined()
@@ -46,7 +46,7 @@ describe('hook works on SSR', () => {
     expect(result.current).toBeDefined()
   })
 
-  it('localstorage called correctly', () => {
+  test('localstorage called correctly', () => {
     const { result } = renderHook(() => usePersistedState('foo', 'bar'))
 
     act(() => {

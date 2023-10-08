@@ -1,7 +1,7 @@
 import isFunction from '../src/utils/is-function'
 
 describe('is-function', () => {
-  it('should return true if function', () => {
+  test('should return true if function', () => {
     const fn1 = function () { return undefined }
     const fn2 = () => { undefined }
     const fn3 = () => undefined
@@ -11,7 +11,7 @@ describe('is-function', () => {
     expect(isFunction(fn3)).toBe(true)
   })
 
-  it('should return false if promise', function () {
+  test('should return false if promise', function () {
     const fn = new Promise(() => undefined )
 
     expect(isFunction(fn)).toBe(false)

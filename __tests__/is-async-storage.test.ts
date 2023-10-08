@@ -17,12 +17,12 @@ const syncStorage2 = {
 }
 
 describe('is-async-storage', () => {
-  it('should return true if async storage', function () {
+  test('should return true if async storage', function () {
     expect(isAsyncStorage(asyncStorage1)).toBe(true)
     expect(isAsyncStorage(asyncStorage2)).toBe(true)
   })
 
-  it('should return false if not async storage', function () {
+  test('should return false if not async storage', function () {
     expect(isAsyncStorage(syncStorage1)).toBe(false)
     expect(isAsyncStorage(syncStorage2)).toBe(false)
     expect(isAsyncStorage(null)).toBe(false)

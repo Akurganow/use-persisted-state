@@ -20,11 +20,11 @@ describe('chrome-storage', function () {
       storageMethods.forEach(method => {
         const storageMethod = storage[method]
 
-        it(`${method} should be defined`, function () {
+        test(`${method} should be defined`, function () {
           expect(storageMethod).toBeDefined()
         })
 
-        it(`${type}.${method}`, function () {
+        test(`${type}.${method}`, function () {
           // @ts-ignore
           storageMethod(storageMethodsTestParams[method])
 
@@ -36,7 +36,7 @@ describe('chrome-storage', function () {
       })
 
       onChangedMethods.forEach(method => {
-        it(`onChanged.${method} should be defined`, function () {
+        test(`onChanged.${method} should be defined`, function () {
           expect(storage.onChanged[method]).toBeDefined()
         })
       })

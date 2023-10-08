@@ -3,7 +3,7 @@ import createWebStorage  from '../../src/utils/create-web-storage'
 describe('create-web-storage', function () {
   const storage = createWebStorage(localStorage)
 
-  it('should create valid storage', function () {
+  test('should create valid storage', function () {
     expect(storage.get).toBeDefined()
     expect(storage.set).toBeDefined()
     expect(storage.remove).toBeDefined()
@@ -12,7 +12,7 @@ describe('create-web-storage', function () {
     expect(storage.onChanged.hasListener).toBeDefined()
   })
 
-  it('should add and remove listener', function () {
+  test('should add and remove listener', function () {
     const listener = jest.fn()
 
     storage.onChanged.addListener(listener)
@@ -24,7 +24,7 @@ describe('create-web-storage', function () {
     expect(storage.onChanged.hasListener(listener)).toBe(false)
   })
 
-  it('should work correctly', function () {
+  test('should work correctly', function () {
     storage.set({key1: 'foo'})
 
     expect(storage.get('key1')).toEqual({key1: 'foo'})

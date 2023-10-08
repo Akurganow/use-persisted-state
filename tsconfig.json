@@ -4,8 +4,8 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "lib": [
-      "dom",
-      "es2017"
+      "DOM",
+      "ESNext"
     ],
     "module": "commonjs",
     "esModuleInterop": true,
@@ -26,17 +26,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "strictNullChecks": true,
-    "suppressImplicitAnyIndexErrors": true,
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "node_modules",
-    "test/**/*",
-    "example/**/*"
+    "__tests__"
   ]
 }

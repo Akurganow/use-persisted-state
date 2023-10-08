@@ -1,7 +1,7 @@
 import React from 'react'
 import createPersistedState from '../src'
-import { render, fireEvent, cleanup, act } from '@testing-library/react'
-import { renderHook, act as hookAct } from '@testing-library/react-hooks'
+import { render, renderHook, cleanup, act, fireEvent } from '@testing-library/react'
+import '@testing-library/jest-dom'
 
 import storage from '../src/storages/local-storage'
 import { local as asyncStorage } from '../src/storages/browser-storage'
@@ -15,20 +15,20 @@ describe('Integration Tests', () => {
     localStorage.clear()
   })
 
-  it('should create async hook if provided async storage', async function () {
+  test('should create async hook if provided async storage', async function () {
     const { result } = renderHook(() => useAsyncPersistedState('foo', 'bar'))
+    const [, setValue] = result.current
 
-    hookAct(() => {
-      const set = result.current[1]('baz')
-      expect(set).resolves.toEqual(undefined)
-    })
+    await act(() =>
+      expect(setValue('baz')).resolves.toBeUndefined(),
+    )
 
-    hookAct(() => {
-      expect(clearAsync()).resolves.toEqual(undefined)
-    })
+    await act(() =>
+      expect(clearAsync()).resolves.toBeUndefined(),
+    )
   })
 
-  it('Component should rerender from change to local storage', () => {
+  test('Component should rerender from change to local storage', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -54,16 +54,14 @@ describe('Integration Tests', () => {
     const testButton = render(<Button />)
     const testComponent = render(<Counter />)
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue))
 
-    act(() => {
-      fireEvent.click(testButton.getByTestId(testButtonId))
-    })
+    act(() => fireEvent.click(testButton.getByTestId(testButtonId)))
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue + 1))
   })
 
-  it('Component should render with persisted state', () => {
+  test('Component should render with persisted state', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -90,14 +88,14 @@ describe('Integration Tests', () => {
 
     const testButton = render(<TestButton />)
 
-    act(() => { fireEvent.click(testButton.getByTestId(testButtonId)) })
+    act(() => fireEvent.click(testButton.getByTestId(testButtonId)))
 
     const testComponent = render(<Component />)
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue + 1))
   })
 
-  it('Should clear persisted state', () => {
+  test('Should clear persisted state', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -139,22 +137,18 @@ describe('Integration Tests', () => {
     const clearButton = render(<ClearButton />)
     const testComponent = render(<Component />)
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue))
 
-    act(() => {
-      fireEvent.click(testButton.getByTestId(testButtonId))
-    })
+    act(() => fireEvent.click(testButton.getByTestId(testButtonId)))
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue + 1))
 
-    act(() => {
-      fireEvent.click(clearButton.getByTestId(clearButtonId))
-    })
+    act(() => fireEvent.click(clearButton.getByTestId(clearButtonId)))
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue))
   })
 
-  it('Should change state when set initial value', () => {
+  test('Should change state when set initial value', () => {
     const initialValue = 0
     const testComponentId = 'test_count_component'
     const testButtonId = 'test_count_button'
@@ -194,18 +188,14 @@ describe('Integration Tests', () => {
     const testInitialButton = render(<InitialButton />)
     const testComponent = render(<Counter />)
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue))
 
-    act(() => {
-      fireEvent.click(testButton.getByTestId(testButtonId))
-    })
+    act(() => fireEvent.click(testButton.getByTestId(testButtonId)))
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue + 1))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue + 1))
 
-    act(() => {
-      fireEvent.click(testInitialButton.getByTestId(testInitialButtonId))
-    })
+    act(() => fireEvent.click(testInitialButton.getByTestId(testInitialButtonId)))
 
-    expect(testComponent.getByTestId(testComponentId).textContent).toBe(String(initialValue))
+    expect(testComponent.getByTestId(testComponentId)).toHaveTextContent(String(initialValue))
   })
 })
