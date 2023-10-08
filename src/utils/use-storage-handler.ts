@@ -65,5 +65,5 @@ export default function<T>(
         storage.onChanged.removeListener(handleStorage)
       }
     }
-  }, [initialValue, key])
+  }, [initialValue, key, storage.onChanged, storageKey, setState])
 }
