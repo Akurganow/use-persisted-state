@@ -17,9 +17,6 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-        node_version:
-          - 18
-          - 20
         architecture:
           - x64
           - x86
@@ -34,7 +31,6 @@ jobs:
           cache-dependency-path: 'package-lock.json'
           check-latest: true
           node-version-file: '.node-version'
-          node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
 
       - name: Cache dependencies
@@ -58,9 +54,6 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-        node_version:
-          - 18
-          - 20
         architecture:
           - x64
           - x86
@@ -72,7 +65,11 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+          check-latest: true
           node-version-file: '.node-version'
+          architecture: ${{ matrix.architecture }}
 
       - name: Cache dependencies
         id: npm-cache
@@ -95,9 +92,6 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-        node_version:
-          - 18
-          - 20
         architecture:
           - x64
           - x86
@@ -108,7 +102,11 @@ jobs:
 
     - uses: actions/setup-node@v3
       with:
+        cache: 'npm'
+        cache-dependency-path: 'package-lock.json'
+        check-latest: true
         node-version-file: '.node-version'
+        architecture: ${{ matrix.architecture }}
 
     - name: Cache dependencies
       uses: actions/cache@v3
