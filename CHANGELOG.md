@@ -1,5 +1,13 @@
 
 
+## [1.1.5](https://github.com/Akurganow/use-persisted-state/compare/v1.1.4...v1.1.5) (2023-10-08)
+
+
+### Bug Fixes
+
+* package.json peerDependencies and engines ([5e48a2f](https://github.com/Akurganow/use-persisted-state/commit/5e48a2f439a0026ea6b0133852d774b3b42f097a))
+* Update gitignore ([2b99bc4](https://github.com/Akurganow/use-persisted-state/commit/2b99bc42e0b2b511aa1a7277cb775fa4de2df631))
+
 ## [1.1.4](https://github.com/Akurganow/use-persisted-state/compare/v1.1.3...v1.1.4) (2023-10-08)
 
 ## [1.1.3](https://github.com/Akurganow/use-persisted-state/compare/v1.1.2...v1.1.3) (2023-10-08)
