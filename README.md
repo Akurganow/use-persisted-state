@@ -1,4 +1,6 @@
 # usePersistedState
+[![npm version](https://badge.fury.io/js/@plq%2Fuse-persisted-state.svg)](https://www.npmjs.com/package/@plq/use-persisted-state)
+[![Tests](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml)
 
 Persists the state to localStorage, sessionStorage or any custom storage
 
