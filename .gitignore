@@ -5,6 +5,7 @@ dist
 .env
 .env.test
 .env.json
+.env.local
 
 # Logs
 logs
@@ -49,4 +50,3 @@ node_modules/
 .idea
 .vscode
 */**/.DS_Store
-
