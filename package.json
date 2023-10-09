@@ -19,7 +19,7 @@
     "test": "jest --verbose",
     "test:watch": "npm test -- --watchAll",
     "lint": "eslint ./src/**/*.ts",
-    "release": "npm run lint && npm run test && npm run build && dotenv release-it",
+    "release": "dotenv release-it",
     "examples": "npm run build:watch & parcel examples/index.html"
   },
   "repository": {
@@ -30,7 +30,8 @@
     "hooks": {
       "before:init": [
         "npm run lint",
-        "npm test"
+        "npm test",
+        "npm run build"
       ],
       "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
     },
@@ -90,5 +91,8 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
+  },
+  "dependencies": {
+    "@plq/is": "^1.2.0"
   }
 }

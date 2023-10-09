@@ -9,7 +9,7 @@ Persists the state to localStorage, sessionStorage or any custom storage
 - Persist the state to `localStorage`, `sessionStorage` or almost anything else implements [storage API](https://github.com/Akurganow/use-persisted-state/blob/master/docs/storage-api.md)
 - The state factory takes as many keys as needed, so you don't have to call the factory for each variable
 - Written with the TypeScript, the definitions go with the library
-- No dependencies
+- No third-party dependencies
 
 ## Example
 

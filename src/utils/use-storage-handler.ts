@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react'
 import { AsyncStorage, Storage, StorageChange } from '../@types/storage'
-import isFunction from './is-function'
+import { isFunction } from '@plq/is'
 
 function getValue<T>(key: string, value: string) {
   let newState = null

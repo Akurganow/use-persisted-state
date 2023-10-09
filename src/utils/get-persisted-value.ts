@@ -1,4 +1,4 @@
-import isFunction from './is-function'
+import { isFunction } from '@plq/is'
 
 export default function<T>(key:string, initialValue: T | (() => T), persist?: string): T {
   let initialPersist: { [x: string]: unknown }
