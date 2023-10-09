@@ -1,5 +1,12 @@
 
 
+## [1.2.0](https://github.com/Akurganow/use-persisted-state/compare/v1.1.5...v1.2.0) (2023-10-09)
+
+
+### Features
+
+* Move is checks to external package ([a7f7732](https://github.com/Akurganow/use-persisted-state/commit/a7f77328b1fd86ea716143b385d8b3ba18300961))
+
 ## [1.1.5](https://github.com/Akurganow/use-persisted-state/compare/v1.1.4...v1.1.5) (2023-10-08)
 
 
