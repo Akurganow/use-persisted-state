@@ -62,7 +62,7 @@
   },
   "homepage": "https://github.com/Akurganow/use-persisted-state#readme",
   "devDependencies": {
-    "@release-it/conventional-changelog": "^7.0.2",
+    "@release-it/conventional-changelog": "^8.0.1",
     "@testing-library/jest-dom": "^6.1.3",
     "@testing-library/react": "^14.0.0",
     "@types/chrome": "0.0.248",
@@ -84,7 +84,7 @@
     "parcel": "^2.9.3",
     "process": "^0.11.10",
     "react-test-renderer": "^18.2.0",
-    "release-it": "^16.2.1",
+    "release-it": "^17.0.0",
     "ts-jest": "^29.1.1",
     "typescript": "^5.2.2"
   },
