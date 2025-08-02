@@ -122,6 +122,23 @@ export default tseslint.config(
     },
   },
 
+  // Node.js configuration files
+  {
+    files: ['*.config.js', 'jest.config.js', 'vite.config.js', 'demo/vite.config.js'],
+    languageOptions: {
+      globals: {
+        module: 'readonly',
+        exports: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+      },
+    },
+  },
+
   // Ignore patterns (replaces .eslintignore)
   {
     ignores: ['node_modules/', 'lib/', 'dist/', 'coverage/'],
