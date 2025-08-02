@@ -50,3 +50,4 @@ node_modules/
 .idea
 .vscode
 */**/.DS_Store
+*/**/.output.txt
