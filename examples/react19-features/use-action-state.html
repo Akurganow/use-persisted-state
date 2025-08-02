@@ -76,11 +76,14 @@
 
     <div id="root"></div>
 
+    <script src="https://unpkg.com/react@19/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@19/umd/react-dom.development.js"></script>
     <script type="module">
-        import React, { useActionState } from 'https://esm.sh/react@19'
-        import { createRoot } from 'https://esm.sh/react-dom@19/client'
         import createPersistedState from '../../lib/index.js'
         import storage from '../../lib/storages/local-storage.js'
+
+        const { useActionState } = React
+        const { createRoot } = ReactDOM
 
         const [usePersistedState] = createPersistedState('react19_form_example', storage)
 

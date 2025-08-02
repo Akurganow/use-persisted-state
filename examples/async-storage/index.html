@@ -1,13 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>usePersistedState async storage example</title>
-  <script defer type="module" src="./index.jsx"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Async Storage Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #6f42c1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5a32a3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        select {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .count {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .loading {
+            color: #6f42c1;
+            font-style: italic;
+        }
+        .info {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-<div id="root"></div>
+    <h1>Async Storage Example</h1>
+    <p>This example demonstrates how to use <code>usePersistedState</code> with async storage (browser.storage).</p>
+
+    <div class="info">
+        <strong>Note:</strong> This example uses browser.storage which is only available in web extensions.
+        In a regular web page, it will fall back to localStorage with async wrapper.
+    </div>
+
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@19/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@19/umd/react-dom.development.js"></script>
+    <script type="module">
+        import { createAsyncPersistedState } from '../../lib/index.js'
+        import { local } from '../../lib/storages/browser-storage.js'
+
+        const { useState, useEffect } = React
+        const { createRoot } = ReactDOM
+
+        const [usePersistedState, clear] = createAsyncPersistedState('async_example', local)
+        const initialValue = 0
+
+        function Actions() {
+            const [key, setKey] = usePersistedState('selectedKey', 'count')
+            const [, setCount] = usePersistedState(key, initialValue)
+            const [isLoading, setIsLoading] = useState(false)
+
+            const handleChange = (event) => {
+                const { value } = event.target
+                setKey(value)
+            }
+
+            const handleAsyncUpdate = async (updateFn) => {
+                setIsLoading(true)
+                try {
+                    // Simulate async operation
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                    setCount(updateFn)
+                } finally {
+                    setIsLoading(false)
+                }
+            }
+
+            return React.createElement('div', null, [
+                React.createElement('div', { key: 'selector' }, [
+                    React.createElement('label', { key: 'label' }, 'Select key: '),
+                    React.createElement('select', {
+                        key: 'select',
+                        onChange: handleChange,
+                        value: key,
+                        disabled: isLoading
+                    }, [
+                        React.createElement('option', { key: 'count', value: 'count' }, 'Count'),
+                        React.createElement('option', { key: 'number', value: 'number' }, 'Number')
+                    ])
+                ]),
+                React.createElement('div', { key: 'buttons' }, [
+                    React.createElement('button', {
+                        key: 'minus',
+                        onClick: () => handleAsyncUpdate(prev => prev - 1),
+                        disabled: isLoading
+                    }, '-'),
+                    React.createElement('button', {
+                        key: 'clear',
+                        onClick: () => handleAsyncUpdate(() => { clear(); return initialValue; }),
+                        disabled: isLoading
+                    }, 'Clear'),
+                    React.createElement('button', {
+                        key: 'initial',
+                        onClick: () => handleAsyncUpdate(() => initialValue),
+                        disabled: isLoading
+                    }, 'Initial'),
+                    React.createElement('button', {
+                        key: 'plus',
+                        onClick: () => handleAsyncUpdate(prev => prev + 1),
+                        disabled: isLoading
+                    }, '+')
+                ]),
+                isLoading && React.createElement('div', { key: 'loading', className: 'loading' }, 'Processing...')
+            ])
+        }
+
+        function Count() {
+            const [count] = usePersistedState('count', initialValue)
+            const [number] = usePersistedState('number', initialValue)
+
+            return React.createElement('div', { className: 'count' }, [
+                'Count: ', count, ' | Number: ', number
+            ])
+        }
+
+        function App() {
+            return React.createElement('div', { className: 'container' }, [
+                React.createElement(Count, { key: 'count' }),
+                React.createElement('hr', { key: 'hr' }),
+                React.createElement(Actions, { key: 'actions' }),
+                React.createElement('p', { key: 'description' }, [
+                    'This example shows how to use async storage operations. ',
+                    'All updates are performed asynchronously with a simulated delay. ',
+                    'The data is persisted using browser.storage API (or localStorage fallback).'
+                ])
+            ])
+        }
+
+        const root = createRoot(document.getElementById('root'))
+        root.render(React.createElement(App))
+    </script>
 </body>
 </html>
