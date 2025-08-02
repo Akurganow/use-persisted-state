@@ -45,7 +45,7 @@ This library is fully compatible with React 19 and supports all new features:
 - Compatible with `useActionState` for form handling
 - Supports `useOptimistic` for optimistic updates
 
-Check out our [React 19 examples](./examples/react19-features/) to see these features in action!
+Check out our [React 19 examples](./demo/src/examples/) to see these features in action!
 
 ## Clear Storage
 ```jsx
