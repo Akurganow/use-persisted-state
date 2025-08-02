@@ -1,9 +1,0 @@
-{
-  "extends": "@parcel/config-default",
-  "resolvers": ["@parcel/resolver-default"],
-  "transformers": {
-    "*.{js,mjs,jsm,jsx,es6,cjs,ts,tsx}": ["@parcel/transformer-js"],
-    "*.{css,less,sass,scss,styl,stylus}": ["@parcel/transformer-css"],
-    "*.{html,htm}": ["@parcel/transformer-html"]
-  }
-}
