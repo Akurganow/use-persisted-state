@@ -1,6 +1,6 @@
 {
   "name": "@plq/use-persisted-state",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "useState hook with persistence in storage",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

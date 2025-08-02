@@ -1,4 +1,17 @@
+# Changelog
 
+## [1.3.0](https://github.com/Akurganow/use-persisted-state/compare/v1.2.0...v1.3.0) (2025-08-02)
+
+### Features
+
+* add React 19 support and update dependencies ([a6122cf](https://github.com/Akurganow/use-persisted-state/commit/a6122cfbb82a144a8d7e4d246293661312bc81ea))
+
+### Bug Fixes
+
+* address code review comments ([af06897](https://github.com/Akurganow/use-persisted-state/commit/af06897da7114b886c7f0c934bde6dab988a8e96))
+* repair examples with interactive controls ([68bfe40](https://github.com/Akurganow/use-persisted-state/commit/68bfe401aa77f8dc27aa13508b9ae4d85881221c))
+* resolve TypeScript compatibility issues and update dependencies ([e9944af](https://github.com/Akurganow/use-persisted-state/commit/e9944af4031c046939073a055baf6aa48bea3f1f))
+* Support falsy values ([6ef9b63](https://github.com/Akurganow/use-persisted-state/commit/6ef9b631858b9f7c3959a2d96f5bee272abf9295))
 
 ## [1.2.0](https://github.com/Akurganow/use-persisted-state/compare/v1.1.5...v1.2.0) (2023-10-09)
 
