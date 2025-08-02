@@ -12,7 +12,7 @@ export default function<T>(key:string, initialValue: T | (() => T), persist?: st
   let initialOrPersistedValue = isFunction(initialValue) ? initialValue()  : initialValue
 
   if (initialPersist && key in initialPersist) {
-    initialOrPersistedValue = (initialPersist[key] as T) || initialOrPersistedValue
+    initialOrPersistedValue = (initialPersist[key] as T) ?? initialOrPersistedValue
   }
 
   return initialOrPersistedValue
