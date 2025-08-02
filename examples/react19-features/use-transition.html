@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React 19 useTransition Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .pending {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .count {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>React 19 useTransition with usePersistedState</h1>
+    <p>This example demonstrates how to use React 19's <code>useTransition</code> hook with <code>usePersistedState</code> for performance optimization.</p>
+
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useTransition } from 'https://esm.sh/react@19'
+        import { createRoot } from 'https://esm.sh/react-dom@19/client'
+        import createPersistedState from '../../lib/index.js'
+        import storage from '../../lib/storages/local-storage.js'
+
+        const [usePersistedState] = createPersistedState('react19_transition_example', storage)
+
+        function TransitionExample() {
+            const [count, setCount] = usePersistedState('count', 0)
+            const [isPending, startTransition] = useTransition()
+
+            const handleFastUpdate = () => {
+                setCount(prev => prev + 1)
+            }
+
+            const handleSlowUpdate = () => {
+                startTransition(() => {
+                    // Simulate slow update by adding a large number
+                    setCount(prev => prev + 1000)
+                })
+            }
+
+            const handleReset = () => {
+                setCount(0)
+            }
+
+            return React.createElement('div', { className: 'container' }, [
+                React.createElement('div', { key: 'count', className: 'count' }, [
+                    'Count: ',
+                    count,
+                    isPending && React.createElement('span', { className: 'pending' }, ' (updating...)')
+                ]),
+                React.createElement('div', { key: 'buttons' }, [
+                    React.createElement('button', {
+                        key: 'fast',
+                        onClick: handleFastUpdate,
+                        disabled: isPending
+                    }, 'Fast +1'),
+                    React.createElement('button', {
+                        key: 'slow',
+                        onClick: handleSlowUpdate,
+                        disabled: isPending
+                    }, 'Slow +1000'),
+                    React.createElement('button', {
+                        key: 'reset',
+                        onClick: handleReset,
+                        disabled: isPending
+                    }, 'Reset')
+                ]),
+                React.createElement('p', { key: 'description' }, [
+                    'The "Fast +1" button updates immediately, while "Slow +1000" uses ',
+                    React.createElement('code', null, 'useTransition'),
+                    ' to mark the update as non-urgent. The state is persisted in localStorage.'
+                ])
+            ])
+        }
+
+        const root = createRoot(document.getElementById('root'))
+        root.render(React.createElement(TransitionExample))
+    </script>
+</body>
+</html>
