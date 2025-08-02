@@ -5,9 +5,9 @@ export default function<T>(key:string, initialValue: T | (() => T), persist?: st
 
   try {
     initialPersist = persist ? JSON.parse(persist) : {}
-  } catch (ignore) {
+  } catch {
     initialPersist = {}
-  } // eslint-disable-line no-empty
+  }
 
   let initialOrPersistedValue = isFunction(initialValue) ? initialValue()  : initialValue
 
