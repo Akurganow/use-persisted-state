@@ -20,16 +20,6 @@ export default function isAsyncStorage(storage: unknown): storage is AsyncStorag
         || isFunction((storage as any).remove) && isPromise((storage as any).remove(''))
         || isAsyncFunction((storage as any).remove)
 
-    console.log('isAsyncStorage', {
-        storage,
-        hasGet,
-        hasSet,
-        hasRemove,
-        hasGetPromise,
-        hasSetPromise,
-        hasRemovePromise,
-    })
-
     return Boolean(storage)
         && hasGet
         && hasSet
