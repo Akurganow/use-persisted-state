@@ -1,7 +1,5 @@
 import React from 'react'
-import {createRoot} from 'react-dom/client'
-
-import createPersistedState from '../../lib'
+import createPersistedState from '@plq/use-persisted-state'
 
 let listeners = []
 
@@ -134,19 +132,17 @@ function Count() {
   return (
     <div>{count}</div>
   )
-
 }
 
-function App() {
+function AsyncStorageExample() {
   return (
     <div>
+      <h3>Async Storage Example</h3>
+      <p>This example demonstrates async storage with custom event handling.</p>
       <Count />
       <Actions />
     </div>
   )
 }
 
-const container = document.getElementById('root')
-const root = createRoot(container)
-
-root.render(<App />)
+export default AsyncStorageExample

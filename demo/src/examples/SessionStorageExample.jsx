@@ -1,8 +1,6 @@
 import React from 'react'
-import { createRoot } from 'react-dom/client'
-
-import createPersistedState from '../../lib'
-import storage from '../../lib/storages/session-storage'
+import createPersistedState from '@plq/use-persisted-state'
+import storage from '@plq/use-persisted-state/storages/session-storage'
 
 const [usePersistedState, clear] = createPersistedState('session_example', storage)
 const initialValue = 0
@@ -36,19 +34,16 @@ function Count() {
   return (
     <div>{count}</div>
   )
-
 }
 
-function App() {
+function SessionStorageExample() {
   return (
     <div>
+      <h3>Session Storage Example</h3>
       <Count />
       <Actions />
     </div>
   )
 }
 
-const container = document.getElementById('root')
-const root = createRoot(container)
-
-root.render(<App />)
+export default SessionStorageExample

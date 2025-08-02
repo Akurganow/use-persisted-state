@@ -36,6 +36,16 @@ export default function App() {
 
 ## Requirement
 To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater which includes Hooks.
+The library is fully compatible with React 18 and React 19.
+
+## React 19 Compatibility
+
+This library is fully compatible with React 19 and supports all new features:
+- Works seamlessly with `useTransition` for performance optimization
+- Compatible with `useActionState` for form handling
+- Supports `useOptimistic` for optimistic updates
+
+Check out our [React 19 examples](./demo/src/examples/) to see these features in action!
 
 ## Clear Storage
 ```jsx

@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
-import {createRoot} from 'react-dom/client'
-
-import createPersistedState from '../../lib'
-import storage from '../../lib/storages/local-storage'
+import createPersistedState from '@plq/use-persisted-state'
+import storage from '@plq/use-persisted-state/storages/local-storage'
 
 const [usePersistedState, clear] = createPersistedState('local_example', storage)
 const initialValue = 0
@@ -50,12 +48,12 @@ function Count() {
   return (
     <div>Count:{count} Number:{number}</div>
   )
-
 }
 
-function App() {
+function LocalStorageExample() {
   return (
     <div>
+      <h3>Local Storage Example</h3>
       <Count />
       <hr />
       <Actions />
@@ -63,7 +61,4 @@ function App() {
   )
 }
 
-const container = document.getElementById('root')
-const root = createRoot(container)
-
-root.render(<App />)
+export default LocalStorageExample
