@@ -6,7 +6,6 @@
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Dependency Dashboard",
   "dependencyDashboardAutoclose": true,
-  "automerge": true,
   "packageRules": [
     {
       "matchUpdateTypes": ["patch", "pin", "digest"],
