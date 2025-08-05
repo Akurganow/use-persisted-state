@@ -46,13 +46,13 @@ export default tseslint.config(
       'semi': [2, 'never'],
       'quotes': ['error', 'single'],
       'block-spacing': [2, 'always'],
-      
+
       // TypeScript rules (migrated and updated)
       '@typescript-eslint/indent': [0],
       '@typescript-eslint/no-explicit-any': [0],
       '@typescript-eslint/ban-types': [0],
       '@typescript-eslint/explicit-function-return-type': [0],
-      
+
       // Arrow function rules
       'arrow-parens': [2, 'as-needed', {requireForBlockBody: false}],
       'no-use-before-define': [1],
@@ -65,7 +65,7 @@ export default tseslint.config(
       'no-underscore-dangle': [0],
       'comma-dangle': [2, 'always-multiline'],
       'max-len': [2, 120, {ignoreComments: true, ignoreUrls: true}],
-      
+
       // React rules (migrated from .eslintrc.js)
       ...reactPlugin.configs.recommended.rules,
       'react/jsx-filename-extension': [0],
@@ -97,7 +97,7 @@ export default tseslint.config(
           afterOpening: 'never',
         },
       ],
-      
+
       // React Hooks rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -124,7 +124,7 @@ export default tseslint.config(
 
   // Node.js configuration files
   {
-    files: ['*.config.js', 'jest.config.js', 'vite.config.js', 'demo/vite.config.js'],
+    files: ['*.config.js', 'jest.config.js', 'vite.config.mjs', 'demo/vite.config.mjs'],
     languageOptions: {
       globals: {
         module: 'readonly',
