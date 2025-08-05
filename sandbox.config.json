@@ -1,0 +1,39 @@
+{
+  "infiniteLoopProtection": true,
+  "hardReloadOnChange": false,
+  "view": "browser",
+  "template": "node",
+  "container": {
+    "port": 3000,
+    "startScript": "demo:preview",
+    "node": "18"
+  },
+  "setupTasks": [
+    {
+      "name": "Install Dependencies",
+      "command": "npm install"
+    },
+    {
+      "name": "Build Demo",
+      "command": "npm run demo:build"
+    }
+  ],
+  "tasks": {
+    "demo:build": {
+      "name": "Build Demo",
+      "command": "npm run demo:build"
+    },
+    "demo:preview": {
+      "name": "Preview Demo",
+      "command": "npm run demo:preview",
+      "runAtStart": true,
+      "preview": {
+        "port": 3000
+      }
+    },
+    "demo:dev": {
+      "name": "Development Server",
+      "command": "npm run demo"
+    }
+  }
+}
