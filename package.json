@@ -20,9 +20,9 @@
     "test:watch": "npm test -- --watchAll",
     "lint": "eslint ./src/**/*.ts",
     "release": "dotenv release-it",
-    "demo": "vite demo",
-    "demo:build": "vite build demo",
-    "demo:preview": "vite preview demo"
+    "demo": "vite",
+    "demo:build": "vite build",
+    "demo:preview": "vite preview"
   },
   "repository": {
     "type": "git",

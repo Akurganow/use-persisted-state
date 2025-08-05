@@ -8,15 +8,12 @@ export default defineConfig({
   root: 'demo',
   resolve: {
     alias: {
-      '@plq/use-persisted-state': resolve(fileURLToPath(new URL('.', import.meta.url)), '../src'),
+      '@plq/use-persisted-state': resolve(fileURLToPath(new URL('.', import.meta.url)), './src'),
     },
   },
   server: {
     port: 3000,
     open: true,
-    fs: {
-      allow: ['..'],
-    },
   },
   build: {
     outDir: 'dist',
