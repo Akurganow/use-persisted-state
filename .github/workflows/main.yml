@@ -111,7 +111,7 @@ jobs:
       run: npm run build --if-present
 
     - name: Upload packages
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: lib-${{ matrix.os }}
         path: lib
