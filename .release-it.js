@@ -53,6 +53,18 @@ module.exports = {
   hooks: {
     'before:init': ['npm run lint', 'npm run typecheck', 'npm test', 'npm run build', 'npm run check:package'],
 
+    // Publishes only once the release commit and tag are on origin/main — see npm.publish below
+    // for why that ordering is the point. The version comes from package.json, which the npm
+    // plugin rewrote during the bump phase, two phases earlier.
+    //
+    // This slot is the last one that still precedes the GitHub release, so a publish that fails
+    // leaves a tag to delete and nothing else; the release notes are only written once the
+    // package is actually on the registry. `before:` hooks run unconditionally, unlike
+    // `after:git:release`, which release-it skips whenever the git plugin's push step returns no
+    // output. The one coupling to know about: this fires because the github plugin is enabled, so
+    // turning `github.release` off below would silently take the publish with it.
+    'before:github:release': 'npm publish',
+
     // The placeholders below are release-it's own and have to survive as literal text. Making it
     // a JS template literal would resolve them when this file loads, where none of them exist.
     // biome-ignore lint/suspicious/noTemplateCurlyInString: resolved by release-it, not by JS
@@ -72,6 +84,13 @@ module.exports = {
     commitMessage: 'chore(release): ${version} [skip ci]',
   },
   npm: {
+    // release-it publishes in the npm phase, which runs before git commits, tags and pushes. A
+    // published version can never be replaced, so a push that failed after it — a rejected bypass,
+    // or a non-fast-forward from a merge that landed mid-run — would strand that version on the
+    // registry with no commit behind it, and every later run would derive the same number and stop
+    // on EPUBLISHCONFLICT. Publishing from the hook above instead makes the same failure cost a
+    // retry: the tag is deletable, the registry entry would not have been.
+    publish: false,
     // Under OIDC there is no token for `npm whoami` to report, so the prerequisite checks fail on
     // an authentication that is in fact working. See release-it's docs/npm.md (Trusted Publishing)
     // and release-it#1244.

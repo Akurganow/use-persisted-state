@@ -10,7 +10,11 @@ name: Release
 # history and read what it plans. It is stated locally rather than inherited because the
 # preset's default has flipped between its versions — see .agents/rules/project-overview.md.
 #
-# release-it commits the version bump and the changelog, tags them, and pushes both back to main.
+# release-it commits the version bump and the changelog, tags them, pushes both back to main, and
+# only then publishes to npm and opens the GitHub release. Nothing reaches the registry until the
+# push has succeeded, because a published version cannot be taken back and a failed push can be
+# retried — see npm.publish in .release-it.js.
+#
 # That push carries `[skip ci]` in the commit message, which is what keeps the release from
 # triggering itself — see the commitMessage in .release-it.js for why that marker is load-bearing
 # here and not merely tidy.

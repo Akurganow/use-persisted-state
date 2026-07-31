@@ -52,8 +52,14 @@ A release that does happen runs `release-it`, which bumps the version in `packag
 publishes to npm over OIDC, and creates the GitHub release. Nobody touches the version or the
 changelog by hand; the only human action is merging.
 
-Two things about that loop are load-bearing and break silently if they are "tidied":
+Three things about that loop are load-bearing and break silently if they are "tidied":
 
+- **Nothing is published until the push has succeeded.** release-it publishes in its npm phase,
+  which runs *before* the commit, tag and push, so `npm.publish` is off and the publish happens
+  from a `before:github:release` hook instead. The asymmetry is the reason: a published version can
+  never be replaced, so publishing before a push that then fails strands a version nobody can reuse
+  and wedges every later run on `EPUBLISHCONFLICT`, while a tag that was pushed without a publish
+  is just deleted and retried.
 - **The release commit carries `[skip ci]`.** It is pushed with a deploy key, not `GITHUB_TOKEN`,
   and a deploy key push *does* start workflows, so without the marker the release commit would
   trigger the release that produced it. The deploy key exists because the branch ruleset can grant
