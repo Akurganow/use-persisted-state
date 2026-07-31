@@ -4,7 +4,7 @@ import { Area, createListenerRegistry, toStorageChanges, toStoredItems } from '.
 const registry = createListenerRegistry()
 
 browser.storage.onChanged.addListener((changes, area) => {
-  registry.fire(toStorageChanges(changes), area as Area)
+  registry.fire(toStorageChanges(changes), area)
 })
 
 // browser.storage is promise-based, unlike its callback-based chrome counterpart.

@@ -4,7 +4,7 @@ import { Area, createListenerRegistry, toStorageChanges, toStoredItems } from '.
 const registry = createListenerRegistry()
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  registry.fire(toStorageChanges(changes), area as Area)
+  registry.fire(toStorageChanges(changes), area)
 })
 
 // chrome.storage is callback-based, unlike its promise-based firefox counterpart.

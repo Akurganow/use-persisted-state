@@ -1,6 +1,14 @@
 import { StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
 
-export type Area = 'local' | 'sync' | 'managed'
+const TRACKED_AREAS = ['local', 'sync', 'managed'] as const
+
+export type Area = (typeof TRACKED_AREAS)[number]
+
+// Both browsers also report `session` changes, an area this library does not
+// expose. Dispatching one would read an undefined listener set and throw.
+function isTrackedArea(area: string): area is Area {
+  return (TRACKED_AREAS as readonly string[]).includes(area)
+}
 
 /**
  * Extension storage holds arbitrary JSON, while this library only ever writes
@@ -52,7 +60,9 @@ export function createListenerRegistry() {
   }
 
   return {
-    fire(changes: { [key: string]: StorageChange }, area: Area): void {
+    fire(changes: { [key: string]: StorageChange }, area: string): void {
+      if (!isTrackedArea(area)) return
+
       listeners[area].forEach(listener => {
         listener(changes)
       })
