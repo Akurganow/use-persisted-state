@@ -200,15 +200,17 @@ describe('Data Types Persistence', () => {
       expect(result.current[0]).toBeUndefined()
     })
 
-    test('should keep undefined set via the setter', () => {
+    test('should write an entry without the key and still hold undefined', () => {
       const { result } = renderHook(() => usePersistedState<string | undefined>('undefinedRoundTripKey', 'initial'))
 
       act(() => {
         result.current[1](undefined)
       })
 
-      // useState parity: even though JSON cannot persist undefined, the
-      // in-memory state the setter was given must not be silently replaced.
+      // What the write leaves behind, which is what separates this from the case
+      // above: JSON drops an undefined member, so the entry is written without
+      // the key and a later mount finds nothing to restore.
+      expect(localStorage.__STORE__['persisted_state_hook:dataTypes']).toBe(JSON.stringify({}))
       expect(result.current[0]).toBeUndefined()
     })
   })
