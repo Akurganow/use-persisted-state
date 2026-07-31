@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // ts-jest transpiles per file and does not type-check, so this config is the
+    // only thing standing between a type error in a test and nobody noticing.
+    "noEmit": true,
+    "rootDir": ".",
+    // The base list exists for the extension adapters in src; tests additionally
+    // need jest's globals, which are ambient and not reachable through imports.
+    "types": ["jest", "chrome", "firefox-webext-browser"]
+  },
+  "include": ["__tests__/**/*.ts", "__tests__/**/*.tsx", "src/**/*.ts"],
+  "exclude": ["node_modules", "lib"]
+}
