@@ -1,7 +1,6 @@
 import React from 'react'
 import createPersistedState from '../src'
 import { render, renderHook, cleanup, act, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom'
 
 import storage from '../src/storages/local-storage'
 import { local as asyncStorage } from '../src/storages/browser-storage'
