@@ -1,0 +1,4 @@
+# Normalize line endings to LF both in the repository and on checkout. Without
+# this, git hands Windows checkouts CRLF, and Biome — configured for LF, matching
+# .editorconfig — reports every line of every file as changed.
+* text=auto eol=lf
