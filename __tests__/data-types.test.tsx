@@ -135,6 +135,19 @@ describe('Data Types Persistence', () => {
       // null не сохраняется, остается initial value
       expect(result.current[0]).toBe('initial')
     })
+
+    test('should read back null set via the setter', () => {
+      const { result } = renderHook(() => usePersistedState<string | null>('nullRoundTripKey', 'initial'))
+
+      act(() => {
+        result.current[1](null)
+      })
+
+      // The setter DOES write null into storage; the value is lost on read-back,
+      // where a nullish persisted value falls back to the initial value.
+      expect(localStorage.__STORE__['persisted_state_hook:dataTypes']).toBe(JSON.stringify({ nullRoundTripKey: null }))
+      expect(result.current[0]).toBeNull()
+    })
   })
 
   describe('Undefined values', () => {
@@ -152,6 +165,18 @@ describe('Data Types Persistence', () => {
     test('should handle undefined initial value', () => {
       const { result } = renderHook(() => usePersistedState<undefined>('undefinedInitialKey', undefined))
 
+      expect(result.current[0]).toBeUndefined()
+    })
+
+    test('should keep undefined set via the setter', () => {
+      const { result } = renderHook(() => usePersistedState<string | undefined>('undefinedRoundTripKey', 'initial'))
+
+      act(() => {
+        result.current[1](undefined)
+      })
+
+      // useState parity: even though JSON cannot persist undefined, the
+      // in-memory state the setter was given must not be silently replaced.
       expect(result.current[0]).toBeUndefined()
     })
   })
