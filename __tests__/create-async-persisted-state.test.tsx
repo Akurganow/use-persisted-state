@@ -272,3 +272,40 @@ describe('pending loads', () => {
     expect(result.current[0]).toBe('set by the user')
   })
 })
+
+describe('a backend that fails the read', () => {
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    cleanup()
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  test('reports the failure and mounts on the initial value', async () => {
+    const failingStorage: AsyncStorage = {
+      get: jest.fn(() => Promise.reject(new Error('storage unavailable'))),
+      set: jest.fn(async () => undefined),
+      remove: jest.fn(async () => undefined),
+      onChanged: {
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        hasListener: () => false,
+      },
+    }
+    const [useFailingPersistedState] = createAsyncPersistedState('failing', failingStorage)
+    const { result } = renderHook(() => useFailingPersistedState('foo', 'initial'))
+
+    await act(async () => {})
+
+    // An extension backend rejects on a quota error or an invalidated context.
+    // Left unclaimed the rejection terminates the process on Node 15+, and the
+    // sync path reports its failures rather than dropping them. Asserting the
+    // library's own message keeps React's logging from satisfying this.
+    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't read value from storage", expect.any(Error))
+    expect(result.current[0]).toBe('initial')
+  })
+})

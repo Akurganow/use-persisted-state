@@ -85,11 +85,21 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       hasAppliedValue.current = false
 
       const loadPersistedValue = async (): Promise<void> => {
-        const persist = await storage.get(safeStorageKey)
+        try {
+          const persist = await storage.get(safeStorageKey)
 
-        if (isCancelled || hasAppliedValue.current) return
+          if (isCancelled || hasAppliedValue.current) return
 
-        applyValue(getPersistedValue<T>(key, mountInitialValue.current, persist[safeStorageKey]))
+          applyValue(getPersistedValue<T>(key, mountInitialValue.current, persist[safeStorageKey]))
+        } catch (err) {
+          // An extension backend rejects on a quota error or an invalidated
+          // extension context. Nothing awaits this load, so an unclaimed
+          // rejection terminates the process on Node 15+ and surfaces as an
+          // uncaught error in the browser. The initial value is already in
+          // state, so the mount stands on it and the failure is reported rather
+          // than swallowed, as the synchronous path reports its own.
+          console.error("use-persisted-state: Can't read value from storage", err)
+        }
       }
 
       loadPersistedValue()
