@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Note that this package is deliberately small — a single runtime
+        dependency — so features that can live in a custom storage adapter usually should.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case, not only the solution — it helps to evaluate alternatives.
+      placeholder: I need to persist state that expires after a certain time...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you like it to work? A sketch of the API is welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you tried or considered — including a custom storage adapter.
+    validations:
+      required: false

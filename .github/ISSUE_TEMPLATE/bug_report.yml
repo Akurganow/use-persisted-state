@@ -1,0 +1,70 @@
+name: Bug report
+description: Something works differently from what is documented or expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+        Please do **not** use this form for security vulnerabilities — see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md) instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected to happen instead.
+      placeholder: The hook returns the initial value even though a value is present in storage...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: A minimal code sample or step-by-step instructions. A link to a repository or sandbox that reproduces the issue is even better.
+      placeholder: |
+        1. Create a factory with `createPersistedState('example', storage)`
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: storage
+    attributes:
+      label: Storage adapter
+      description: Which storage backend does the bug occur with?
+      options:
+        - local-storage
+        - session-storage
+        - browser-storage (web extension)
+        - chrome-storage (web extension)
+        - custom adapter
+        - not storage-related / unsure
+    validations:
+      required: true
+  - type: input
+    id: library-version
+    attributes:
+      label: Library version
+      placeholder: e.g. 1.3.0
+    validations:
+      required: true
+  - type: input
+    id: react-version
+    attributes:
+      label: React version
+      placeholder: e.g. 19.1.1
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and OS, or the runtime where the bug occurs (SSR framework, extension, etc.).
+      placeholder: e.g. Chrome 138 on macOS / Next.js 15 SSR
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that helps — console errors, storage contents, workarounds you found.
+    validations:
+      required: false

@@ -1,17 +1,32 @@
 # usePersistedState
-[![npm version](https://badge.fury.io/js/@plq%2Fuse-persisted-state.svg)](https://www.npmjs.com/package/@plq/use-persisted-state)
-[![Tests](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml)
 
-Persists the state to localStorage, sessionStorage or any custom storage
+[![npm version](https://badge.fury.io/js/@plq%2Fuse-persisted-state.svg)](https://www.npmjs.com/package/@plq/use-persisted-state)
+[![Tests](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+A React `useState` that persists to `localStorage`, `sessionStorage`, extension storage (`browser.storage` / `chrome.storage`), or any custom backend.
 
 ## Features
 
-- Persist the state to `localStorage`, `sessionStorage` or almost anything else implements [storage API](https://github.com/Akurganow/use-persisted-state/blob/master/docs/storage-api.md)
-- The state factory takes as many keys as needed, so you don't have to call the factory for each variable
-- Written with the TypeScript, the definitions go with the library
-- No third-party dependencies
+- Persist state to `localStorage`, `sessionStorage`, extension storage, or almost anything else that implements the [storage API](docs/storage-api.md)
+- One state factory serves as many keys as needed, so you don't have to call the factory for each variable
+- Supports both synchronous and asynchronous storage backends
+- Components using the same key stay in sync; with the `localStorage` adapter, changes also propagate across browser tabs
+- Written in TypeScript — type definitions ship with the package
+- A single tiny runtime dependency: [`@plq/is`](https://www.npmjs.com/package/@plq/is)
 
-## Example
+## Requirements
+
+To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater, which includes Hooks.
+The library is tested against React 19 and works with React 18.
+
+## Install
+
+```sh
+npm install @plq/use-persisted-state
+```
+
+## Quick start
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
@@ -32,22 +47,55 @@ export default function App() {
 }
 ```
 
-[![Edit @plq/use-persisted-state](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/plquse-persisted-state-ob2od?fontsize=14)
+To try it locally, run the demo app from a repository checkout: `npm ci && npm run demo`.
 
-## Requirement
-To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater which includes Hooks.
-The library is fully compatible with React 18 and React 19.
+## API
 
-## React 19 Compatibility
+### `createPersistedState(name, storage)` — default export
 
-This library is fully compatible with React 19 and supports all new features:
-- Works seamlessly with `useTransition` for performance optimization
-- Compatible with `useActionState` for form handling
-- Supports `useOptimistic` for optimistic updates
+```ts
+const [usePersistedState, clear] = createPersistedState(name, storage)
+```
 
-Check out our [React 19 examples](./demo/src/examples/) to see these features in action!
+- `name` — a namespace for this factory. All keys created by the returned hook are stored together in a single storage entry named `persisted_state_hook:<name>`.
+- `storage` — a synchronous or asynchronous storage backend implementing the [storage API](docs/storage-api.md).
 
-## Clear Storage
+Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous by probing it: each of `get`, `set` and `remove` is called once (`get('')`, `set({})`, `remove('')`) to see whether it returns a `Promise`. If your backend must not be called during setup, import one of the named factories below instead — they skip detection entirely.
+
+### Named factories
+
+```ts
+import { createPersistedState, createAsyncPersistedState } from '@plq/use-persisted-state'
+```
+
+- `createPersistedState(name, storage)` — for synchronous backends only (`localStorage`, `sessionStorage`).
+- `createAsyncPersistedState(name, storage)` — for asynchronous backends only (`browser.storage`, `chrome.storage`, custom promise-based backends).
+
+### `usePersistedState(key, initialValue)`
+
+```ts
+const [state, setState] = usePersistedState(key, initialValue)
+```
+
+Works like `useState`: returns the current state and a setter that accepts either a value or an updater function (`prev => next`). In addition, every update is written to the storage backend, and external changes to the stored value update the state.
+
+- Values are serialized with `JSON.stringify`, so they must be JSON-serializable (no functions, class instances, `Map`, `Set`, etc.).
+- With an asynchronous backend, the hook renders `initialValue` first and updates once the stored value has loaded.
+
+### `clear()`
+
+Removes the factory's whole storage entry. Hooks created by that factory fall back to their initial values. Returns `void` for synchronous backends and `Promise<void>` for asynchronous ones.
+
+### TypeScript
+
+The package ships its own type definitions. When writing a custom backend, the storage contract types can be imported directly:
+
+```ts
+import type { Storage, AsyncStorage } from '@plq/use-persisted-state/lib/@types/storage'
+```
+
+## Clear storage
+
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
 import storage from '@plq/use-persisted-state/lib/storages/local-storage'
@@ -67,25 +115,30 @@ export default function App() {
   )
 }
 ```
+
 ## Use sessionStorage
+
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
 import storage from '@plq/use-persisted-state/lib/storages/session-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 ```
+
 ## Use async storage
+
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-// or
+// or, to skip async detection:
 import { createAsyncPersistedState } from '@plq/use-persisted-state'
 import { local } from '@plq/use-persisted-state/lib/storages/browser-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', local)
 ```
+
 ## Use custom storage
 
-The [storage API](https://github.com/Akurganow/use-persisted-state/blob/master/docs/storage-api.md) is similar to the browser.storage but with a few differences
+The [storage API](docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences.
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
@@ -100,9 +153,9 @@ onChangeSomeStorage(event => {
     },
   }
 
-  listeners.forEach(listener => {
+  for (const listener of storageListeners) {
     listener(changes)
-  })
+  }
 })
 
 const myStorage = {
@@ -118,16 +171,63 @@ const myStorage = {
 
 const [usePersistedState, clear] = createPersistedState('example', myStorage)
 ```
+
 ## Storage adapters
+
 ### [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage) `@plq/use-persisted-state/lib/storages/local-storage`
-  - Useful for average web application
+
+- Useful for the average web application.
+- Synchronous. Changes made in other browser tabs are picked up through the [`storage` event](https://developer.mozilla.org/docs/Web/API/Window/storage_event).
+
 ### [sessionStorage](https://developer.mozilla.org/docs/Web/API/Window/sessionStorage) `@plq/use-persisted-state/lib/storages/session-storage`
-  - Useful for average web application
+
+- Useful for state that should not outlive the browser session.
+- Synchronous.
+
 ### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/lib/storages/browser-storage`
-  - Only for web extensions.
-  - Don't forget to set up [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run extension in Chrome browser.
-  - To use this storage you need to include the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file
-### [chrome.storage](https://developer.chrome.com/apps/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
-  - Only for Chrome-based web extensions.
-  - If you develop extension that will be run only in Chrome browser you can use this storage without [polyfill](https://github.com/mozilla/webextension-polyfill).
-  - You must declare the "storage" permission in the [extension manifest](https://developer.chrome.com/apps/manifest) to use this storage.
+
+- Only for web extensions. Asynchronous.
+- Named exports for each storage area: `local`, `sync` and `managed` (note that the [managed area](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage/managed) is read-only for the extension).
+- Don't forget to set up the [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run the extension in a Chromium-based browser.
+- You need to declare the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file.
+
+### [chrome.storage](https://developer.chrome.com/docs/extensions/reference/api/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
+
+- Only for Chromium-based web extensions. Asynchronous.
+- Named exports for each storage area: `local`, `sync` and `managed` (the managed area is read-only for the extension).
+- If your extension runs only in Chromium-based browsers, you can use this adapter without the polyfill.
+- You must declare the "storage" permission in the [extension manifest](https://developer.chrome.com/docs/extensions/reference/manifest) to use this adapter.
+
+```jsx
+import createPersistedState from '@plq/use-persisted-state'
+import { local } from '@plq/use-persisted-state/lib/storages/chrome-storage'
+
+const [usePersistedState, clear] = createPersistedState('example', local)
+```
+
+## Server-side rendering
+
+This library targets browser environments and ships no SSR guards:
+
+- The bundled `local-storage` and `session-storage` adapters access `localStorage` / `sessionStorage` at import time, so importing them in an environment without these globals throws.
+- The synchronous hook reads from storage during render.
+
+When using an SSR framework (Next.js, Remix, etc.), make sure both the adapter import and the components using the hook run only on the client — for example, in client-only components or behind a dynamic import that is disabled during SSR.
+
+## How values are stored
+
+Each factory keeps all of its keys in a single storage entry named `persisted_state_hook:<name>`, holding a JSON object with one property per key:
+
+```
+persisted_state_hook:example → {"count":0}
+```
+
+Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](SECURITY.md)).
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing and the commit convention, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards.
+
+## License
+
+[MIT](LICENSE)

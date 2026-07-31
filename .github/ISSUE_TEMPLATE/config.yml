@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md
+    about: Please report security vulnerabilities privately — never through public issues.
