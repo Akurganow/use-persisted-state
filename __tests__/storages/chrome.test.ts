@@ -46,15 +46,6 @@ describe('chrome-storage', function () {
 
       afterEach(() => {
         chrome.storage[type].clear()
-
-        // @ts-ignore
-        chrome.storage[type].get.mockClear()
-        // @ts-ignore
-        chrome.storage[type].set.mockClear()
-        // @ts-ignore
-        chrome.storage[type].remove.mockClear()
-        // @ts-ignore
-        chrome.storage[type].clear.mockClear()
       })
     })
   }

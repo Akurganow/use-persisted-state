@@ -12,13 +12,27 @@ describe('hook defined correctly', () => {
     localStorage.clear()
   })
 
-  test('is callable', () => {
+  test('is callable', async () => {
     const { result } = renderHook(() => usePersistedState('foo', 'bar'))
 
     expect(usePersistedState).toBeDefined()
     expect(clear).toBeDefined()
     expect(result.current).toBeDefined()
+
+    // The mount effect reads storage asynchronously. Without draining it first, a
+    // write awaited inside that effect would land after the assertion below and
+    // pass unseen.
+    await act(async () => {})
+
     expect(browser.storage.local.set).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await result.current[1]('baz')
+    })
+
+    // Keeps the negative assertion above honest: a dead write path would satisfy
+    // it exactly as well as rendering-writes-nothing does.
+    expect(browser.storage.local.set).toHaveBeenCalledTimes(1)
   })
 
   test('localstorage called correctly', async () => {
