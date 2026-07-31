@@ -8,12 +8,10 @@ type StorageCandidate = {
   remove?: unknown
 }
 
-// Asyncness that can be established without invoking the member.
-const isProvablyAsync = (member: unknown): boolean => isPromise(member) || isAsyncFunction(member)
-
-// `@plq/is` classifies async functions as their own type, so `isFunction` rejects them:
-// every callable check here has to admit both or async storages fall out on the sync path.
-const isUsableMember = (member: unknown): boolean => isFunction(member) || isProvablyAsync(member)
+// `AsyncStorage` is three methods, so every member has to be callable: a promise standing in for
+// one satisfies nothing the hook then does with it. `@plq/is` classifies async functions as their
+// own type, so `isFunction` rejects them and both checks are needed to admit a callable member.
+const isCallableMember = (member: unknown): boolean => isFunction(member) || isAsyncFunction(member)
 
 /**
  * Narrows a storage to {@link AsyncStorage}, deciding which hook the entry point builds.
@@ -31,11 +29,12 @@ export default function isAsyncStorage(storage: unknown): storage is AsyncStorag
 
   const { get, set, remove } = candidate
 
-  if (!isUsableMember(set) || !isUsableMember(remove)) {
+  if (!isCallableMember(set) || !isCallableMember(remove)) {
     return false
   }
 
-  if (isProvablyAsync(get)) {
+  // An `async` declaration is the one form of asyncness visible without a call.
+  if (isAsyncFunction(get)) {
     return true
   }
 

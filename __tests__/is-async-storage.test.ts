@@ -2,19 +2,7 @@ import isAsyncStorage from '../src/utils/is-async-storage'
 import * as browserStorage from '../src/storages/browser-storage'
 import * as chromeStorage from '../src/storages/chrome-storage'
 
-const asyncStorage1 = {
-  get: new Promise(resolve => {
-    resolve('value')
-  }),
-  set: new Promise<void>(resolve => {
-    resolve()
-  }),
-  remove: new Promise<void>(resolve => {
-    resolve()
-  }),
-}
-
-const asyncStorage2 = {
+const asyncStorage = {
   get: async () => 'value',
   set: async (value: unknown) => value,
   remove: async (value: unknown) => value,
@@ -50,8 +38,7 @@ const syncStorage2 = {
 
 describe('is-async-storage', () => {
   test('should return true if async storage', function () {
-    expect(isAsyncStorage(asyncStorage1)).toBe(true)
-    expect(isAsyncStorage(asyncStorage2)).toBe(true)
+    expect(isAsyncStorage(asyncStorage)).toBe(true)
     expect(isAsyncStorage(promiseReturningStorage)).toBe(true)
   })
 
@@ -61,6 +48,17 @@ describe('is-async-storage', () => {
     expect(isAsyncStorage(null)).toBe(false)
     expect(isAsyncStorage(undefined)).toBe(false)
     expect(isAsyncStorage({ getItem: true })).toBe(false)
+  })
+
+  test('should return false if a member is a promise instead of a function', function () {
+    const settled = Promise.resolve('value')
+
+    // `AsyncStorage` is three methods. A promise standing in for one is not
+    // callable, so admitting it hands the async hook a storage whose first use
+    // can only be a TypeError.
+    expect(isAsyncStorage({ get: settled, set: async () => undefined, remove: async () => undefined })).toBe(false)
+    expect(isAsyncStorage({ get: async () => 'value', set: settled, remove: async () => undefined })).toBe(false)
+    expect(isAsyncStorage({ get: async () => 'value', set: async () => undefined, remove: settled })).toBe(false)
   })
 
   test('should never write to or remove from the inspected storage', function () {

@@ -79,11 +79,13 @@ reported without an `oldValue` is ignored.
   single storage key, `persisted_state_hook:<name>`, containing a JSON object with one property per
   hook key.
 - **Detection reads, and never writes.** The default export tells `Storage` and `AsyncStorage` apart
-  from the shape of your methods first: a `get` declared `async`, or one that is already a `Promise`,
-  settles it without any call. Only when neither holds does it call `get('')` once and check whether
-  the result is a `Promise`. `set` and `remove` are examined for shape but never invoked, so
-  detection cannot change what your backend holds. The probe's result is discarded, and a rejection
-  from it is handled rather than left to terminate the consuming process on Node 15+. If even a read
+  from the shape of your methods first: a `get` declared `async` settles it without any call. Only
+  when that does not hold does it call `get('')` once, as a method of your storage, and check whether
+  the result is a `Promise`. All three members must be functions — a promise stored in place of one
+  is not a method and is rejected. `set` and `remove` are examined for shape but never invoked, so
+  detection cannot change what your backend holds. The probe's result is discarded; a rejection from
+  it is handled rather than left to terminate the consuming process on Node 15+, and a `get` that
+  throws outright is reported as not asynchronous instead of taking the import down. If even a read
   during setup is undesirable, use the named factories, which skip detection.
 
 ## Example
