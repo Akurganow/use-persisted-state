@@ -164,6 +164,20 @@ describe('Data Types Persistence', () => {
       // write has to reach the same null, or the initial value silently resurrects.
       expect(reader.current[0]).toBeNull()
     })
+
+    test('should apply a null written by another hook on the same key', () => {
+      const { result: writer } = renderHook(() => usePersistedState<string | null>('nullSyncKey', 'initial'))
+      const { result: reader } = renderHook(() => usePersistedState<string | null>('nullSyncKey', 'initial'))
+
+      act(() => {
+        writer.current[1](null)
+      })
+
+      // Two components sharing a key must not disagree. The change event carries the stored
+      // null and the listener has to apply it; reading "stored null" as "no value" strands
+      // this reader on its initial value while the writer already shows null.
+      expect(reader.current[0]).toBeNull()
+    })
   })
 
   describe('Undefined values', () => {
