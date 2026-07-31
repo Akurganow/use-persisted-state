@@ -21,10 +21,10 @@ them. A wrong type ships a wrong version to everyone who installs the package.
 
 | Type | Effect on the release |
 | --- | --- |
-| `fix:`, `perf:` | patch |
+| `fix:`, `perf:`, `revert:` | patch |
 | `feat:` | minor |
 | `BREAKING CHANGE:` in the body | major |
-| `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:`, `revert:` | no release |
+| `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
 
 The table is enforced by the `whatBump` in `.release-it.js`, not by the preset's default; see
 [project overview](project-overview.md) before changing either.

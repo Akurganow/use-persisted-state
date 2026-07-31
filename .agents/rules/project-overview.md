@@ -43,9 +43,23 @@ Public API changes follow semver. A behaviour change that users can observe — 
 when it re-renders, what lands in storage — is breaking even when the type signature is untouched.
 
 Releases are cut automatically from every push to `main`, so merging a pull request is what publishes.
-The version comes from the commit messages alone: only `feat`, `fix`, `perf` and a declared breaking
-change earn one, and a push carrying nothing else ends in "No new version to release" and a green run,
-so dependency updates cost a no-op rather than a version.
+The version comes from the commit messages alone: only `feat`, `fix`, `perf`, `revert` and a declared
+breaking change earn one, and a push carrying nothing else ends in "No new version to release" and a
+green run, so dependency updates cost a no-op rather than a version.
+
+A release that does happen runs `release-it`, which bumps the version in `package.json`, writes
+`CHANGELOG.md`, commits both, tags the commit, pushes the branch and the tag back to `main`,
+publishes to npm over OIDC, and creates the GitHub release. Nobody touches the version or the
+changelog by hand; the only human action is merging.
+
+Two things about that loop are load-bearing and break silently if they are "tidied":
+
+- **The release commit carries `[skip ci]`.** It is pushed with a deploy key, not `GITHUB_TOKEN`,
+  and a deploy key push *does* start workflows, so without the marker the release commit would
+  trigger the release that produced it. The deploy key exists because the branch ruleset can grant
+  a bypass to that actor and cannot grant one to the built-in `github-actions[bot]`.
+- **The workflow file must stay `.github/workflows/release.yml`.** The npm trusted publisher is
+  bound to that filename; renaming the file stops OIDC publishing.
 
 That policy is stated by the `whatBump` in `.release-it.js` rather than inherited from the preset,
 because the preset's own answer has already flipped once under this repository. In
@@ -58,9 +72,8 @@ takes that decision back.
 
 Measured with `release-it --dry-run --ci` over synthetic histories, both with the local `whatBump`
 and with it removed: nothing, chore-only, and `chore + docs + ci + refactor + test + build` release
-nothing; `chore + fix` gives a patch, `chore + fix + feat` a minor, `perf` alone a patch, and a
-`BREAKING CHANGE` footer a major whichever type carries it. On the current lock the two agree
-everywhere except `revert:`, which the preset counts as a patch and the local policy does not.
+nothing; `chore + fix` gives a patch, `chore + fix + feat` a minor, `perf` alone a patch, `revert`
+alone a patch, and a `BREAKING CHANGE` footer a major whichever type carries it.
 Re-measure that ladder before changing `whatBump`, and before accepting an upgrade to
 `@release-it/conventional-changelog` or to the preset beneath it — the bump ladder decides what gets
 published, and it is not owned by this repository alone.

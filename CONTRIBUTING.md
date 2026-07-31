@@ -88,10 +88,10 @@ installs the package.**
 
 | Type | Effect on the release |
 | --- | --- |
-| `fix:`, `perf:` | patch |
+| `fix:`, `perf:`, `revert:` | patch |
 | `feat:` | minor |
 | `BREAKING CHANGE:` in the body/footer | major |
-| `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:`, `revert:` | no release |
+| `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
 
 Use the body to explain **why** the change was made. The diff already shows what changed.
 
@@ -115,9 +115,11 @@ Use the body to explain **why** the change was made. The diff already shows what
 ## Releases
 
 Releases are cut automatically. Every push to `main` runs the GitHub Actions **Release** workflow,
-which runs `release-it`: the version and changelog are derived from the conventional commit history,
-and the package is published to npm. Merging a pull request is therefore what publishes it, which is
-why the table above matters. Contributors never need to publish anything.
+which runs `release-it`: the version and changelog are derived from the conventional commit history.
+It bumps the version in `package.json`, writes `CHANGELOG.md`, commits both back to `main`, tags
+them, publishes to npm and opens a GitHub release. Merging a pull request is therefore what
+publishes it, which is why the table above matters. Contributors never need to publish anything —
+and should never edit the version or the changelog by hand, since the release owns both.
 
 A push whose commits earn no version — dependency bumps, documentation, CI — finishes green having
 done nothing, and its log reads `No new version to release`. The line above it renders a changelog
