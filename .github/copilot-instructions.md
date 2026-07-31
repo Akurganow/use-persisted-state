@@ -3,7 +3,7 @@
 ## Project Overview
 - **Project**: TypeScript React library providing a `usePersistedState` hook that persists state to web storage or custom adapters
 - **Package**: `@plq/use-persisted-state` - A lightweight, type-safe state persistence solution for React applications
-- **Languages & tooling**: TypeScript, React ≥16.8 (Hooks support), Jest for testing, ESLint for linting
+- **Languages & tooling**: TypeScript, React ≥16.8 (Hooks support), Jest for testing, Biome for linting and formatting
 - **Runtime dependencies**: Only `@plq/is` (minimal utility library)
 - **React compatibility**: Supports React 16.8+, React 18, and React 19 with full feature compatibility
 
@@ -22,7 +22,7 @@
 - **Install**: `npm ci` (use exact versions from package-lock.json)
 - **Build**: `npm run build` (TypeScript compilation)
 - **Test**: `npm test` (Jest with verbose output)
-- **Lint**: `npm run lint` (ESLint on TypeScript files)
+- **Lint**: `npm run lint` (Biome over `src`, `__tests__` and `demo`); `npm run lint:fix` applies safe fixes, `npm run format` formats
 - **Demo**: `npm run demo` (Vite development server for examples)
 
 ## Code Style & Quality Standards
