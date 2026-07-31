@@ -42,7 +42,6 @@ updates:
         patterns:
           - release-it
           - '@release-it/*'
-          - conventional-changelog-cli
           - dotenv-cli
     open-pull-requests-limit: 5
     commit-message:
