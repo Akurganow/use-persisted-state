@@ -48,6 +48,8 @@ export default function App() {
 }
 ```
 
+This example uses the bundled `localStorage` adapter; [Storage adapters](#storage-adapters) lists the rest and what each one is for.
+
 To try it locally, run the demo app from a repository checkout: `npm ci && npm run demo`.
 
 ## API
