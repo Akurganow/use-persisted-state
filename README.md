@@ -3,6 +3,7 @@
 [![npm version](https://badge.fury.io/js/@plq%2Fuse-persisted-state.svg)](https://www.npmjs.com/package/@plq/use-persisted-state)
 [![Tests](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Akurganow/use-persisted-state/actions/workflows/main.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/akurganow)
 
 A React `useState` that persists to `localStorage`, `sessionStorage`, extension storage (`browser.storage` / `chrome.storage`), or any custom backend.
 
@@ -18,7 +19,7 @@ A React `useState` that persists to `localStorage`, `sessionStorage`, extension 
 ## Requirements
 
 To use `@plq/use-persisted-state`, you must use `react@16.8.0` or greater, which includes Hooks.
-The library is tested against React 19 and works with React 18.
+The library is tested against React 19. The peer range allows React 16.8 and above, though only 19 is exercised in CI.
 
 ## Install
 
@@ -223,6 +224,17 @@ persisted_state_hook:example → {"count":0}
 ```
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](SECURITY.md)).
+
+## Known issues
+
+These are defects, not intended behaviour, and are tracked for a fix. They are listed so you are
+not caught out by them in the meantime.
+
+- **`null` does not survive a round trip.** Setting a value to `null` writes it to storage, but on
+  the next read the hook falls back to the initial value instead of returning `null`. Use a
+  sentinel value if you need to represent "empty" today.
+- **`undefined` is not persisted.** `JSON.stringify` drops it, so the key disappears and the
+  initial value comes back.
 
 ## Contributing
 

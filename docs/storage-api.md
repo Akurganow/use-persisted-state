@@ -70,7 +70,9 @@ reported without an `oldValue` is ignored.
 - **Values are strings.** The library serializes state with `JSON.stringify` before calling `set`
   and expects `get` to return exactly the strings that were stored. An adapter must not parse or
   transform values. If the underlying backend can hold non-string data (as extension storage can),
-  the adapter should report such foreign values as absent rather than widen the contract — see
+  the adapter should narrow rather than widen the contract: the bundled adapters omit foreign
+  values from `get`, and report them as `null` in `onChanged`, which the library reads as a
+  removal — see
   [`src/utils/extension-storage.ts`](../src/utils/extension-storage.ts) for how the bundled
   adapters do this.
 - **One entry per factory.** Each `createPersistedState(name, storage)` factory reads and writes a

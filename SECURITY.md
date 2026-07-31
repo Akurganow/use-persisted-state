@@ -13,14 +13,14 @@ Only the latest release of `@plq/use-persisted-state` receives security fixes.
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Report them privately by email to **me@akurganow.ru**. Include as much of the following as you
+Report them privately by email to **a.kurganow@gmail.com**. Include as much of the following as you
 can:
 
 - A description of the vulnerability and its impact.
 - Steps to reproduce, ideally with a minimal code sample.
 - The affected version(s) and environment.
 
-You should receive an acknowledgement within 7 days. Please allow time for the issue to be
+Reports are acknowledged as soon as they are seen. Please allow time for the issue to be
 investigated and fixed before any public disclosure; you will be credited in the fix release
 unless you prefer otherwise.
 
