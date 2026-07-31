@@ -79,6 +79,14 @@ consumer achieves is subscribing to their own events that nothing addresses.
 under `src/utils/` without need, not an argument against the map. The map is also what makes a
 deliberate, announced closure possible at a future major; without it there is no mechanism at all.
 
+**One reason for keeping it open has since gone.** `Storage` and `AsyncStorage` used to live only
+under `lib/@types/`, so the README sent every TypeScript consumer writing an adapter into `lib/`, and
+the path was documented rather than merely historical. The entry point exports the contract types
+now, and every surviving mention of a `lib/` path marks it as a legacy path that still resolves
+rather than as the way in; no example reaches for one. That changes no decision here — the rule
+above turns on what resolves today, not on what is documented — but the case for the pattern is one
+argument shorter, and a future major closing it has one less thing to replace first.
+
 An allowlist — replacing the pattern with one entry per module that exists today — would freeze the
 surface at its current members while keeping every path that resolves today. It was not taken: it
 turns the map into a hand-maintained list that has to track build output, which is the same drift the
