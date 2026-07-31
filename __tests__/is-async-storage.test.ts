@@ -100,6 +100,37 @@ describe('is-async-storage', () => {
     expect(get).toHaveBeenCalledTimes(1)
   })
 
+  test('should probe a method-style get as a method of its storage', function () {
+    const methodStyleStorage = {
+      entries: {},
+      get() {
+        return Promise.resolve(this.entries)
+      },
+      set: () => Promise.resolve(),
+      remove: () => Promise.resolve(),
+    }
+
+    // An adapter written as an object of methods is entitled to be called as one.
+    // Probing the extracted function leaves `this` undefined, so a `get` reading
+    // its own storage throws while merely being inspected.
+    expect(isAsyncStorage(methodStyleStorage)).toBe(true)
+  })
+
+  test('should report a storage whose probe throws as not async', function () {
+    const throwingStorage = {
+      get: () => {
+        throw new Error('storage unavailable')
+      },
+      set: () => Promise.resolve(),
+      remove: () => Promise.resolve(),
+    }
+
+    // Consumers build the factory at module scope, so a throw escaping detection
+    // takes the import down. The storage is not provably async, and the sync path
+    // raises the same failure at the first read, where a component can handle it.
+    expect(isAsyncStorage(throwingStorage)).toBe(false)
+  })
+
   test('should claim the rejection of the storage it probed', async function () {
     const failingStorage = {
       get: () => Promise.reject(new Error('storage unavailable')),

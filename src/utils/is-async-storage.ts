@@ -48,7 +48,20 @@ export default function isAsyncStorage(storage: unknown): storage is AsyncStorag
   // third-party one is free to be written that way, so this line stays necessary however the
   // shipped adapters happen to declare themselves. A read is the one probe that leaves the
   // inspected storage as it found it.
-  const probe = get('')
+  let probe: unknown
+
+  try {
+    // Called as a method of the storage it belongs to: an adapter written as an
+    // object of methods reads its own state through `this`, and probing the
+    // extracted function would throw on a storage that is perfectly valid.
+    probe = get.call(candidate, '')
+  } catch {
+    // Not swallowed, deferred: consumers build the factory at module scope, where
+    // a throw takes the import down instead of reaching a component. A storage
+    // whose read fails is not provably async, and the sync path raises the same
+    // failure at the first read, where it can be handled.
+    return false
+  }
 
   if (!isPromise(probe)) {
     return false
