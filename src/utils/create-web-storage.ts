@@ -1,14 +1,14 @@
-import { Storage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
+import type { Storage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
 
 const listeners = new Set<StorageChangeListener>()
 
 function fireStorageEvent(changes: { [key: string]: StorageChange }) {
-  listeners.forEach(listener => {
+  for (const listener of listeners) {
     listener(changes)
-  })
+  }
 }
 
-window.addEventListener('storage', event => {
+globalThis.addEventListener('storage', event => {
   if (event.key) {
     const changes = {
       [event.key]: {
@@ -20,6 +20,10 @@ window.addEventListener('storage', event => {
     fireStorageEvent(changes)
   }
 })
+
+function toKeyList(keys: string | string[]): string[] {
+  return Array.isArray(keys) ? keys : [keys]
+}
 
 const onChanged: StorageChangeEvent = {
   addListener(listener) {
@@ -37,16 +41,10 @@ export default (storage: globalThis.Storage): Storage => ({
   get: keys => {
     const result: { [key: string]: string } = {}
 
-    if (Array.isArray(keys)) {
-      keys.forEach(key => {
-        const item = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
+    for (const key of toKeyList(keys)) {
+      const item = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
 
-        if (item) result[key] = item
-      })
-    } else {
-      const item = typeof storage !== 'undefined' ? storage.getItem(keys) : undefined
-
-      if (item) result[keys] = item
+      if (item) result[key] = item
     }
 
     return result
@@ -54,7 +52,7 @@ export default (storage: globalThis.Storage): Storage => ({
   set: items => {
     const changes: { [key: string]: StorageChange } = {}
 
-    Object.entries(items).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(items)) {
       const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
 
       if (typeof storage !== 'undefined') {
@@ -65,33 +63,20 @@ export default (storage: globalThis.Storage): Storage => ({
           newValue: value,
         }
       }
-    })
+    }
 
     if (Object.keys(changes).length > 0) fireStorageEvent(changes)
   },
   remove: keys => {
     const changes: { [key: string]: StorageChange } = {}
 
-    if (Array.isArray(keys)) {
-      keys.forEach(key => {
-        const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
-
-        if (typeof storage !== 'undefined') {
-          storage.removeItem(key)
-
-          changes[key] = {
-            oldValue,
-            newValue: null,
-          }
-        }
-      })
-    } else {
-      const oldValue = typeof storage !== 'undefined' ? storage.getItem(keys) : undefined
+    for (const key of toKeyList(keys)) {
+      const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
 
       if (typeof storage !== 'undefined') {
-        storage.removeItem(keys)
+        storage.removeItem(key)
 
-        changes[keys] = {
+        changes[key] = {
           oldValue,
           newValue: null,
         }
@@ -102,4 +87,3 @@ export default (storage: globalThis.Storage): Storage => ({
   },
   onChanged,
 })
-

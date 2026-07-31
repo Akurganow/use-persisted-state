@@ -24,17 +24,35 @@ function Actions() {
         </select>
       </div>
       <button
+        type="button"
         onClick={() => {
           setCount(prevCount => prevCount - 1)
-        }}>
+        }}
+      >
         -
       </button>
-      <button onClick={() => { clear() }}>Clear</button>
-      <button onClick={() => { setCount(initialValue) }}>Initial</button>
       <button
+        type="button"
+        onClick={() => {
+          clear()
+        }}
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setCount(initialValue)
+        }}
+      >
+        Initial
+      </button>
+      <button
+        type="button"
         onClick={() => {
           setCount(prevCount => prevCount + 1)
-        }}>
+        }}
+      >
         +
       </button>
     </div>
@@ -46,7 +64,9 @@ function Count() {
   const [number] = usePersistedState('number', initialValue)
 
   return (
-    <div>Count:{count} Number:{number}</div>
+    <div>
+      Count:{count} Number:{number}
+    </div>
   )
 }
 

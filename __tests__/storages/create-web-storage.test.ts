@@ -1,4 +1,4 @@
-import createWebStorage  from '../../src/utils/create-web-storage'
+import createWebStorage from '../../src/utils/create-web-storage'
 
 describe('create-web-storage', function () {
   const storage = createWebStorage(localStorage)
@@ -25,11 +25,11 @@ describe('create-web-storage', function () {
   })
 
   test('should work correctly', function () {
-    storage.set({key1: 'foo'})
+    storage.set({ key1: 'foo' })
 
-    expect(storage.get('key1')).toEqual({key1: 'foo'})
+    expect(storage.get('key1')).toEqual({ key1: 'foo' })
 
-    storage.set({key2: 'bar', key3: 'baz'})
+    storage.set({ key2: 'bar', key3: 'baz' })
 
     expect(storage.get(['key2', 'key3'])).toEqual({
       key2: 'bar',

@@ -1,30 +1,29 @@
-import {isFunction, isAsyncFunction, isPromise} from '@plq/is'
-import type {AsyncStorage} from '../@types/storage'
+import { isAsyncFunction, isFunction, isPromise } from '@plq/is'
+import type { AsyncStorage } from '../@types/storage'
+
+// An unvalidated candidate: its members are unknown until each one is checked.
+type StorageCandidate = {
+  get?: unknown
+  set?: unknown
+  remove?: unknown
+}
 
 export default function isAsyncStorage(storage: unknown): storage is AsyncStorage {
-    const hasGet = Boolean(storage) && typeof (storage as any)?.get !== 'undefined'
-    const hasSet = Boolean(storage) && typeof (storage as any)?.set !== 'undefined'
-    const hasRemove = Boolean(storage) && typeof (storage as any)?.remove !== 'undefined'
+  const candidate = storage as StorageCandidate | null | undefined
 
-    if (!hasGet || !hasSet || !hasRemove) {
-        return false
-    }
+  const hasGet = Boolean(storage) && typeof candidate?.get !== 'undefined'
+  const hasSet = Boolean(storage) && typeof candidate?.set !== 'undefined'
+  const hasRemove = Boolean(storage) && typeof candidate?.remove !== 'undefined'
 
-    const hasGetPromise = isPromise((storage as any).get)
-        || isFunction((storage as any).get) && isPromise((storage as any).get(''))
-        || isAsyncFunction((storage as any).get)
-    const hasSetPromise = isPromise((storage as any).set)
-        || isFunction((storage as any).set) && isPromise((storage as any).set({}))
-        || isAsyncFunction((storage as any).set)
-    const hasRemovePromise = isPromise((storage as any).remove)
-        || isFunction((storage as any).remove) && isPromise((storage as any).remove(''))
-        || isAsyncFunction((storage as any).remove)
+  if (!hasGet || !hasSet || !hasRemove) {
+    return false
+  }
 
-    return Boolean(storage)
-        && hasGet
-        && hasSet
-        && hasRemove
-        && hasGetPromise
-        && hasSetPromise
-        && hasRemovePromise
+  const { get, set, remove } = candidate as StorageCandidate
+
+  const hasGetPromise = isPromise(get) || (isFunction(get) && isPromise(get(''))) || isAsyncFunction(get)
+  const hasSetPromise = isPromise(set) || (isFunction(set) && isPromise(set({}))) || isAsyncFunction(set)
+  const hasRemovePromise = isPromise(remove) || (isFunction(remove) && isPromise(remove(''))) || isAsyncFunction(remove)
+
+  return Boolean(storage) && hasGet && hasSet && hasRemove && hasGetPromise && hasSetPromise && hasRemovePromise
 }

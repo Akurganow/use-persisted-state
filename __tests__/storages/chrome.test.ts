@@ -3,21 +3,23 @@ import * as chromeStorage from '../../src/storages/chrome-storage'
 
 describe('chrome-storage', function () {
   const types: ('local' | 'sync' | 'managed')[] = ['local', 'sync', 'managed']
-  types.forEach(type => {
+  for (const type of types) {
     describe(type, function () {
       const storage = chromeStorage[type]
-      const storageMethods: ('get' | 'set' | 'remove')[] =
-        ['get', 'set', 'remove']
+      const storageMethods: ('get' | 'set' | 'remove')[] = ['get', 'set', 'remove']
       const storageMethodsTestParams = {
         get: 'key',
         set: { key: 'value' },
         remove: 'key',
       }
 
-      const onChangedMethods: ('addListener' | 'removeListener' | 'hasListener')[] =
-        ['addListener', 'removeListener', 'hasListener']
+      const onChangedMethods: ('addListener' | 'removeListener' | 'hasListener')[] = [
+        'addListener',
+        'removeListener',
+        'hasListener',
+      ]
 
-      storageMethods.forEach(method => {
+      for (const method of storageMethods) {
         const storageMethod = storage[method]
 
         test(`${method} should be defined`, function () {
@@ -28,18 +30,19 @@ describe('chrome-storage', function () {
           // @ts-ignore
           storageMethod(storageMethodsTestParams[method])
 
-          expect(chrome.storage[type][method])
-            .toHaveBeenCalledTimes(1)
-          expect(chrome.storage[type][method])
-            .toHaveBeenCalledWith(storageMethodsTestParams[method], expect.any(Function))
+          expect(chrome.storage[type][method]).toHaveBeenCalledTimes(1)
+          expect(chrome.storage[type][method]).toHaveBeenCalledWith(
+            storageMethodsTestParams[method],
+            expect.any(Function),
+          )
         })
-      })
+      }
 
-      onChangedMethods.forEach(method => {
+      for (const method of onChangedMethods) {
         test(`onChanged.${method} should be defined`, function () {
           expect(storage.onChanged[method]).toBeDefined()
         })
-      })
+      }
 
       afterEach(() => {
         chrome.storage[type].clear()
@@ -54,5 +57,5 @@ describe('chrome-storage', function () {
         chrome.storage[type].clear.mockClear()
       })
     })
-  })
+  }
 })

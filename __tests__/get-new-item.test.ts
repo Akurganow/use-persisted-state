@@ -17,18 +17,20 @@ describe('get-new-item', function () {
   })
 
   it('should return stringified object', function () {
-    expect(getNewItem<string>('key', '{"foo": "bar"}', 'baz'))
-      .toEqual(JSON.stringify({
+    expect(getNewItem<string>('key', '{"foo": "bar"}', 'baz')).toEqual(
+      JSON.stringify({
         foo: 'bar',
         key: 'baz',
-      }))
+      }),
+    )
   })
 
   it('should console.error if not valid persistedItem', function () {
-    expect(getNewItem<string>('key', 'foo: bar', 'baz'))
-      .toEqual(JSON.stringify({
+    expect(getNewItem<string>('key', 'foo: bar', 'baz')).toEqual(
+      JSON.stringify({
         key: 'baz',
-      }))
+      }),
+    )
 
     expect(console.error).toHaveBeenCalled()
   })

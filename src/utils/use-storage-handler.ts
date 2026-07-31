@@ -1,54 +1,58 @@
-import React, {useEffect} from 'react'
-import { AsyncStorage, Storage, StorageChange } from '../@types/storage'
+import type React from 'react'
+import { useEffect } from 'react'
+import type { AsyncStorage, Storage, StorageChange } from '../@types/storage'
 import { isFunction } from '@plq/is'
 
-function getValue<T>(key: string, value: string) {
-  let newState = null
+function getValue<T>(key: string, value: string): T | null {
+  let parsed: unknown = null
 
   try {
-    newState = JSON.parse(value)
+    parsed = JSON.parse(value)
   } catch (err) {
-    console.error('use-persisted-state: Can\'t parse value from storage', err)
+    console.error("use-persisted-state: Can't parse value from storage", err)
   }
 
-  return newState && key in newState ? newState[key] as T : null
+  return parsed && key in (parsed as object) ? ((parsed as Record<string, unknown>)[key] as T) : null
 }
 
-function useStorageHandler<T>(
+// Restores the initial value when the whole entry is removed from the storage.
+function applyRemoval<T>(
+  change: StorageChange,
+  itemKey: string,
+  setState: React.Dispatch<React.SetStateAction<T>>,
+  initialValue: T | (() => T),
+): void {
+  if (change.oldValue === null || change.oldValue === undefined) return
+
+  const oldValue = getValue<T>(itemKey, change.oldValue)
+
+  if (oldValue !== initialValue) setState(isFunction(initialValue) ? initialValue() : initialValue)
+}
+
+// Builds the change handler. Not a hook, despite living next to one.
+function createStorageHandler<T>(
   itemKey: string,
   storageKey: string,
   setState: React.Dispatch<React.SetStateAction<T>>,
   initialValue: T | (() => T),
 ) {
   return (changes: { [key: string]: StorageChange }): void => {
-    Object.entries(changes).forEach(([key, change]) => {
-      if (
-        key === storageKey
-        && (
-          change.newValue === null || change.newValue === undefined
-        )
-        && change.oldValue !== null
-        && change.oldValue !== undefined
-      ) {
-        const oldValue = getValue<T>(itemKey, change.oldValue)
+    for (const [key, change] of Object.entries(changes)) {
+      if (key !== storageKey) continue
 
-        if (oldValue !== initialValue) setState(isFunction(initialValue) ? initialValue() : initialValue)
+      if (change.newValue === null || change.newValue === undefined) {
+        applyRemoval<T>(change, itemKey, setState, initialValue)
+        continue
       }
 
-      if (
-        key === storageKey
-        && change.newValue !== null
-        && change.newValue !== undefined
-      ) {
-        const newValue = getValue<T>(itemKey, change.newValue)
+      const newValue = getValue<T>(itemKey, change.newValue)
 
-        if (newValue !== null) setState(newValue)
-      }
-    })
+      if (newValue !== null) setState(newValue)
+    }
   }
 }
 
-export default function<T>(
+export default function useStorageHandler<T>(
   key: string,
   storageKey: string,
   setState: React.Dispatch<React.SetStateAction<T>>,
@@ -56,7 +60,7 @@ export default function<T>(
   initialValue: T | (() => T),
 ): void {
   useEffect(() => {
-    const handleStorage = useStorageHandler<T>(key, storageKey, setState, initialValue)
+    const handleStorage = createStorageHandler<T>(key, storageKey, setState, initialValue)
 
     storage.onChanged.addListener(handleStorage)
 

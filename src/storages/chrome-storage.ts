@@ -1,4 +1,4 @@
-import { AsyncStorage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
+import type { AsyncStorage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
 
 const listeners = {
   local: new Set<StorageChangeListener>(),
@@ -9,9 +9,9 @@ const listeners = {
 type Area = keyof typeof listeners
 
 function fireStorageEvent(changes: { [key: string]: StorageChange }, area: Area) {
-  listeners[area].forEach(listener => {
+  for (const listener of listeners[area]) {
     listener(changes)
-  })
+  }
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -33,17 +33,20 @@ function createOnChanged(area: Area): StorageChangeEvent {
 }
 
 const createStorage = (storage: chrome.storage.StorageArea, area: Area): AsyncStorage => ({
-  get: keys => new Promise(resolve => {
-    storage.get(keys, items => {
-      resolve(items)
-    })
-  }),
-  set: items => new Promise(resolve => {
-    storage.set(items, resolve)
-  }),
-  remove: keys => new Promise(resolve => {
-    storage.remove(keys, resolve)
-  }),
+  get: keys =>
+    new Promise(resolve => {
+      storage.get(keys, items => {
+        resolve(items)
+      })
+    }),
+  set: items =>
+    new Promise(resolve => {
+      storage.set(items, resolve)
+    }),
+  remove: keys =>
+    new Promise(resolve => {
+      storage.remove(keys, resolve)
+    }),
   onChanged: createOnChanged(area),
 })
 
@@ -51,8 +54,4 @@ const local = createStorage(chrome.storage.local, 'local')
 const sync = createStorage(chrome.storage.sync, 'sync')
 const managed = createStorage(chrome.storage.managed, 'managed')
 
-export {
-  local,
-  sync,
-  managed,
-}
+export { local, sync, managed }
