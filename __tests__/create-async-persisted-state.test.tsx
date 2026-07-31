@@ -89,9 +89,11 @@ function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferre
 }
 
 describe('hook defined correctly', () => {
-  beforeEach(() => {
+  // Awaited, or the removal settles inside the next test and fires a change
+  // event at whatever listener that test has registered by then.
+  beforeEach(async () => {
     cleanup()
-    clear()
+    await clear()
     localStorage.clear()
   })
 
