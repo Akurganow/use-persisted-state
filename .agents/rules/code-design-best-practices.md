@@ -1,5 +1,5 @@
 ---
-description: DRY, SOLID, clean code and clean architecture rules, with the violations this codebase already contains
+description: DRY, SOLID, clean code and clean architecture rules, with worked examples from this codebase
 trigger: always
 tags:
   - design
@@ -19,10 +19,11 @@ well it works.
 the same behaviour is needed twice, extract it — and when you find yourself copying a file to adapt
 it, that is the moment to factor out the shared part instead.
 
-This codebase already carries the violation: `src/storages/chrome-storage.ts` and
-`src/storages/browser-storage.ts` are near-identical copies — same listener registry, same
-`fireStorageEvent`, same `createOnChanged`, differing only in the extension API they call. Adding a
-third backend by copying a second time makes it worse.
+The two extension adapters show the shape this takes. `src/storages/chrome-storage.ts` and
+`src/storages/browser-storage.ts` were near-identical copies; what they shared — the listener
+registry, the change conversion, the value normalization — now lives in
+`src/utils/extension-storage.ts`, and each adapter keeps only the calls its own extension API needs.
+A third backend extends that module rather than copying an adapter.
 
 DRY is about knowledge, not characters. Two pieces of code that look alike but answer to different
 reasons for change should stay apart; merging them couples things that must move independently.
@@ -57,9 +58,10 @@ Never leak a backend's quirks inward, and never widen a core type to accommodate
 
 - Functions do one thing and are small enough to read at once.
 - No surprises: a function named as a query does not mutate anything. **A predicate must have no side
-  effects.** `isAsyncStorage` currently violates this — it detects async support by *calling*
-  `get('')`, `set({})` and `remove('')` on the storage it inspects, so merely asking a question writes
-  to the user's storage.
+  effects.** `isAsyncStorage` is the worked example: it once detected async support by *calling*
+  `get('')`, `set({})` and `remove('')`, so merely asking a question wrote to the user's storage. It
+  now answers from the declared members wherever it can, never invokes `set` or `remove`, and falls
+  back to a single `get('')` — the one probe that leaves the inspected storage as it found it.
 - Prefer clear names over comments; when a comment is needed, it explains why.
 - No flag parameters that make a function do two different things.
 - Fail loudly and early rather than continuing with a broken value.

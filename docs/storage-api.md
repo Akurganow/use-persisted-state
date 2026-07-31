@@ -78,10 +78,15 @@ reported without an `oldValue` is ignored.
 - **One entry per factory.** Each `createPersistedState(name, storage)` factory reads and writes a
   single storage key, `persisted_state_hook:<name>`, containing a JSON object with one property per
   hook key.
-- **Detection probes the backend.** The default export tells `Storage` and `AsyncStorage` apart by
-  calling `get('')`, `set({})` and `remove('')` once and checking whether the results are
-  `Promise`s. If probing your backend is undesirable, use the named factories, which skip
-  detection.
+- **Detection reads, and never writes.** The default export tells `Storage` and `AsyncStorage` apart
+  from the shape of your methods first: a `get` declared `async` settles it without any call. Only
+  when that does not hold does it call `get('')` once, as a method of your storage, and check whether
+  the result is a `Promise`. All three members must be functions — a promise stored in place of one
+  is not a method and is rejected. `set` and `remove` are examined for shape but never invoked, so
+  detection cannot change what your backend holds. The probe's result is discarded; a rejection from
+  it is handled rather than left to terminate the consuming process on Node 15+, and a `get` that
+  throws outright is reported as not asynchronous instead of taking the import down. If even a read
+  during setup is undesirable, use the named factories, which skip detection.
 
 ## Example
 
@@ -113,8 +118,18 @@ const myStorage = {
 }
 ```
 
-TypeScript users can import the contract types directly:
+TypeScript users can import the contract types from the entry point:
 
 ```ts
-import type { Storage, AsyncStorage } from '@plq/use-persisted-state/lib/@types/storage'
+import type {
+  AsyncStorage,
+  Storage,
+  StorageChange,
+  StorageChangeEvent,
+  StorageChangeListener,
+} from '@plq/use-persisted-state'
 ```
+
+The longer `@plq/use-persisted-state/lib/@types/storage` path that earlier versions documented
+continues to work and resolves to the same types. Prefer the entry point: `lib/` is kept open for
+compatibility only, and is the one path `check:attw` does not verify.

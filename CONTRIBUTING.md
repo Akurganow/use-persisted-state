@@ -34,8 +34,10 @@ npm ci
 | `src/@types/` | Public type definitions |
 | `__tests__/` | Jest test suite |
 | `demo/` | Vite example app (not published) |
-| `docs/` | Documentation, including the [storage API](docs/storage-api.md) |
+| `docs/` | Documentation, including the [storage API](docs/storage-api.md) and [packaging](docs/packaging.md) |
 | `lib/` | Build output produced by `tsc` — never edit it by hand |
+| `esm/`, `storages/` | Hand-written wrappers over `lib/` — see [packaging](docs/packaging.md) |
+| `scripts/` | Package checks run by `npm run check:package` |
 
 Everything under `src/` is public API that other projects depend on. A change to a signature or to
 observable behaviour — what the hook returns, when it re-renders, what lands in storage — affects
@@ -47,11 +49,13 @@ consumers even when the type signature is untouched.
 | --- | --- |
 | Run tests | `npm test` |
 | Run tests in watch mode | `npm run test:watch` |
+| Type-check the tests | `npm run typecheck` |
 | Lint (Biome) | `npm run lint` |
 | Lint and apply safe fixes | `npm run lint:fix` |
 | Format | `npm run format` |
 | Build the library | `npm run build` |
 | Build in watch mode | `npm run build:watch` |
+| Check what would be published | `npm run check:package` (needs `npm run build` first) |
 | Run the demo app | `npm run demo` |
 
 ## Testing
@@ -84,7 +88,7 @@ installs the package.**
 
 | Type | Effect on the release |
 | --- | --- |
-| `fix:` | patch |
+| `fix:`, `perf:`, `revert:` | patch |
 | `feat:` | minor |
 | `BREAKING CHANGE:` in the body/footer | major |
 | `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
@@ -101,17 +105,31 @@ Use the body to explain **why** the change was made. The diff already shows what
    dependencies — the package deliberately has exactly one (`@plq/is`) and is chosen for being
    small. Do not edit `lib/` (build output) or `CHANGELOG.md` (generated on release), and do not
    bump the version in `package.json` — releases handle both.
-4. **Verify locally:** `npm run lint`, `npm test` and `npm run build` must all pass. CI runs the
-   same three steps on Linux, macOS and Windows for every pull request.
+4. **Verify locally:** `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` must all
+   pass. CI runs those four on Linux, macOS and Windows for every pull request, and
+   `npm run check:package` on the build output.
 5. **Open the pull request** against `main` and fill in the template. Keep the title in the
    Conventional Commits format, since it determines the released version once merged.
 6. **Update documentation** (README, `docs/`) when the public API or observable behaviour changes.
 
 ## Releases
 
-Releases are cut manually by maintainers via the GitHub Actions **Release** workflow, which runs
-`release-it`: the version and changelog are derived from the conventional commit history, and the
-package is published to npm. Contributors never need to publish anything.
+Releases are cut automatically. Every push to `main` runs the GitHub Actions **Release** workflow,
+which runs `release-it`: the version and changelog are derived from the conventional commit history.
+It bumps the version in `package.json`, writes `CHANGELOG.md`, commits both back to `main`, tags
+them, publishes to npm and opens a GitHub release. Merging a pull request is therefore what
+publishes it, which is why the table above matters. Contributors never need to publish anything —
+and should never edit the version or the changelog by hand, since the release owns both.
+
+A push whose commits earn no version — dependency bumps, documentation, CI — finishes green having
+done nothing, and its log reads `No new version to release`. The line above it renders a changelog
+heading containing `null`, as in `## [null](compare/v1.0.0...vnull)`. That is the changelog plugin
+formatting a heading before the run decides there is no version; nothing is written and nothing is
+published. It is noise in the log, not a symptom.
+
+The workflow can also be started by hand from the Actions tab, which is how you force an increment
+the commit history understates, rehearse the whole thing with `--dry-run`, or retry a release whose
+commits are already on `main` after an outage.
 
 ## Reporting bugs and security issues
 

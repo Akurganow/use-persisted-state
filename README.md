@@ -31,7 +31,7 @@ npm install @plq/use-persisted-state
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/lib/storages/local-storage'
+import storage from '@plq/use-persisted-state/storages/local-storage'
 
 const [usePersistedState] = createPersistedState('example', storage)
 
@@ -48,6 +48,8 @@ export default function App() {
 }
 ```
 
+This example uses the bundled `localStorage` adapter; [Storage adapters](#storage-adapters) lists the rest and what each one is for.
+
 To try it locally, run the demo app from a repository checkout: `npm ci && npm run demo`.
 
 ## API
@@ -61,7 +63,7 @@ const [usePersistedState, clear] = createPersistedState(name, storage)
 - `name` — a namespace for this factory. All keys created by the returned hook are stored together in a single storage entry named `persisted_state_hook:<name>`.
 - `storage` — a synchronous or asynchronous storage backend implementing the [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md).
 
-Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous by probing it: each of `get`, `set` and `remove` is called once (`get('')`, `set({})`, `remove('')`) to see whether it returns a `Promise`. If your backend must not be called during setup, import one of the named factories below instead — they skip detection entirely.
+Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous from the shape of its methods wherever it can — a `get` declared `async` settles the question without a call. Only when that does not hold does it call `get('')` once, as a method of your storage, to see whether the result is a `Promise`; `set` and `remove` are never invoked, so detection cannot write to your storage. All three members must be functions. If even a read during setup is undesirable, import one of the named factories below instead — they skip detection entirely.
 
 ### Named factories
 
@@ -80,7 +82,7 @@ const [state, setState] = usePersistedState(key, initialValue)
 
 Works like `useState`: returns the current state and a setter that accepts either a value or an updater function (`prev => next`). In addition, every update is written to the storage backend, and external changes to the stored value update the state.
 
-- Values are serialized with `JSON.stringify`, so they must be JSON-serializable (no functions, class instances, `Map`, `Set`, etc.).
+- Values are serialized with `JSON.stringify`, so they must be JSON-serializable (no functions, class instances, `Map`, `Set`, etc.). A few values serialize into something else rather than failing outright — see [Values JSON cannot carry](#values-json-cannot-carry).
 - With an asynchronous backend, the hook renders `initialValue` first and updates once the stored value has loaded.
 
 ### `clear()`
@@ -89,17 +91,21 @@ Removes the factory's whole storage entry. Hooks created by that factory fall ba
 
 ### TypeScript
 
-The package ships its own type definitions. When writing a custom backend, the storage contract types can be imported directly:
+The package ships its own type definitions. The storage contract and the hook's own types are exported from the entry point:
 
 ```ts
-import type { Storage, AsyncStorage } from '@plq/use-persisted-state/lib/@types/storage'
+import type { Storage, AsyncStorage, StorageChange, StorageChangeListener } from '@plq/use-persisted-state'
 ```
+
+`Storage` and `AsyncStorage` are the two backend contracts. `StorageChange`, `StorageChangeListener` and `StorageChangeEvent` describe the `onChanged` event an adapter provides. `PersistedState` and `UsePersistedState` type the hook and the tuple it returns.
+
+The longer `@plq/use-persisted-state/lib/@types/storage` path that earlier versions documented continues to work and resolves to the same types. Prefer the entry point: `lib/` is kept open for compatibility only.
 
 ## Clear storage
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/lib/storages/local-storage'
+import storage from '@plq/use-persisted-state/storages/local-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 
@@ -121,7 +127,7 @@ export default function App() {
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/lib/storages/session-storage'
+import storage from '@plq/use-persisted-state/storages/session-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 ```
@@ -132,32 +138,19 @@ const [usePersistedState, clear] = createPersistedState('example', storage)
 import createPersistedState from '@plq/use-persisted-state'
 // or, to skip async detection:
 import { createAsyncPersistedState } from '@plq/use-persisted-state'
-import { local } from '@plq/use-persisted-state/lib/storages/browser-storage'
+import { local } from '@plq/use-persisted-state/storages/browser-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', local)
 ```
 
 ## Use custom storage
 
-The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences.
+The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences. Any object implementing it works:
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
 
 const storageListeners = new Set()
-
-onChangeSomeStorage(event => {
-  const changes = {
-    [event.key]: {
-      newValue: event.newValue,
-      oldValue: event.oldValue,
-    },
-  }
-
-  for (const listener of storageListeners) {
-    listener(changes)
-  }
-})
 
 const myStorage = {
   get: keys => getItemsFromSomeStorage(keys),
@@ -167,32 +160,39 @@ const myStorage = {
     addListener: listener => storageListeners.add(listener),
     removeListener: listener => storageListeners.delete(listener),
     hasListener: listener => storageListeners.has(listener),
-  }
+  },
 }
 
 const [usePersistedState, clear] = createPersistedState('example', myStorage)
 ```
 
+Your adapter owns that listener set and calls every listener when the backing store changes, which is what keeps components on the same key in sync. The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) documents the change payload and carries the complete example, including how to forward a backend's own events to the listeners.
+
 ## Storage adapters
 
-### [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage) `@plq/use-persisted-state/lib/storages/local-storage`
+The longer `@plq/use-persisted-state/lib/storages/…` paths that earlier versions documented continue
+to work. Prefer the shorter ones below: imported from ES module code, the `lib` path hands back the
+CommonJS exports object rather than the adapter, so it needs an extra `.default` that the shorter
+path does not.
+
+### [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage) `@plq/use-persisted-state/storages/local-storage`
 
 - Useful for the average web application.
 - Synchronous. Changes made in other browser tabs are picked up through the [`storage` event](https://developer.mozilla.org/docs/Web/API/Window/storage_event).
 
-### [sessionStorage](https://developer.mozilla.org/docs/Web/API/Window/sessionStorage) `@plq/use-persisted-state/lib/storages/session-storage`
+### [sessionStorage](https://developer.mozilla.org/docs/Web/API/Window/sessionStorage) `@plq/use-persisted-state/storages/session-storage`
 
 - Useful for state that should not outlive the browser session.
 - Synchronous.
 
-### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/lib/storages/browser-storage`
+### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/storages/browser-storage`
 
 - Only for web extensions. Asynchronous.
 - Named exports for each storage area: `local`, `sync` and `managed` (note that the [managed area](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage/managed) is read-only for the extension).
 - Don't forget to set up the [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run the extension in a Chromium-based browser.
 - You need to declare the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file.
 
-### [chrome.storage](https://developer.chrome.com/docs/extensions/reference/api/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
+### [chrome.storage](https://developer.chrome.com/docs/extensions/reference/api/storage) `@plq/use-persisted-state/storages/chrome-storage`
 
 - Only for Chromium-based web extensions. Asynchronous.
 - Named exports for each storage area: `local`, `sync` and `managed` (the managed area is read-only for the extension).
@@ -201,19 +201,19 @@ const [usePersistedState, clear] = createPersistedState('example', myStorage)
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import { local } from '@plq/use-persisted-state/lib/storages/chrome-storage'
+import { local } from '@plq/use-persisted-state/storages/chrome-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', local)
 ```
 
 ## Server-side rendering
 
-This library targets browser environments and ships no SSR guards:
+This library targets browser environments. Two things matter when rendering on a server:
 
-- The bundled `local-storage` and `session-storage` adapters access `localStorage` / `sessionStorage` at import time, so importing them in an environment without these globals throws.
+- The bundled `local-storage` and `session-storage` adapters can be imported without `localStorage` / `sessionStorage`. Where the global is missing the adapter reads back nothing and discards every write, so the hook keeps its initial value rather than throwing.
 - The synchronous hook reads from storage during render.
 
-When using an SSR framework (Next.js, Remix, etc.), make sure both the adapter import and the components using the hook run only on the client — for example, in client-only components or behind a dynamic import that is disabled during SSR.
+When using an SSR framework (Next.js, Remix, etc.), make sure the components using the hook run only on the client — for example, in client-only components or behind a dynamic import that is disabled during SSR.
 
 ## How values are stored
 
@@ -225,16 +225,19 @@ persisted_state_hook:example → {"count":0}
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
-## Known issues
+### Values JSON cannot carry
 
-These are defects, not intended behaviour, and are tracked for a fix. They are listed so you are
-not caught out by them in the meantime.
+A few values do not survive `JSON.stringify`. This follows from the format rather than from a choice
+the library makes, and no adapter can repair it: once a value has been written, nothing in storage
+tells a `null` you stored apart from a `null` that JSON produced.
 
-- **`null` does not survive a round trip.** Setting a value to `null` writes it to storage, but on
-  the next read the hook falls back to the initial value instead of returning `null`. Use a
-  sentinel value if you need to represent "empty" today.
-- **`undefined` is not persisted.** `JSON.stringify` drops it, so the key disappears and the
+- **`undefined`** — the key is dropped, so nothing reaches storage at all. The component that set it
+  keeps `undefined` in memory, as `useState` would, and other components already mounted on that key
+  see no change and keep the value they hold. After a remount or a reload the key is absent, so the
   initial value comes back.
+- **`NaN`, `Infinity`, `-Infinity`** — these are written as `null`. The component that set the value
+  keeps it until it remounts; every other component on that key reads back `null`, as does any
+  reader after a reload.
 
 ## Contributing
 

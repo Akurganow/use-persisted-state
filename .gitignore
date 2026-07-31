@@ -54,3 +54,9 @@ node_modules/
 
 # Isolated worktrees used by coding agents
 .claude/worktrees/
+
+# Scratch files, not part of the project
+tmp/
+
+# Artefacts left by browser automation used during development
+.playwright-mcp/

@@ -2,14 +2,81 @@
   "name": "@plq/use-persisted-state",
   "version": "1.3.0",
   "description": "useState hook with persistence in storage",
+  "type": "commonjs",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./esm/index.d.mts",
+        "default": "./esm/index.mjs"
+      },
+      "require": {
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.js"
+      },
+      "default": "./lib/index.js"
+    },
+    "./storages/local-storage": {
+      "import": {
+        "types": "./esm/storages/local-storage.d.mts",
+        "default": "./esm/storages/local-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/local-storage.d.ts",
+        "default": "./lib/storages/local-storage.js"
+      },
+      "default": "./lib/storages/local-storage.js"
+    },
+    "./storages/session-storage": {
+      "import": {
+        "types": "./esm/storages/session-storage.d.mts",
+        "default": "./esm/storages/session-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/session-storage.d.ts",
+        "default": "./lib/storages/session-storage.js"
+      },
+      "default": "./lib/storages/session-storage.js"
+    },
+    "./storages/browser-storage": {
+      "import": {
+        "types": "./esm/storages/browser-storage.d.mts",
+        "default": "./esm/storages/browser-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/browser-storage.d.ts",
+        "default": "./lib/storages/browser-storage.js"
+      },
+      "default": "./lib/storages/browser-storage.js"
+    },
+    "./storages/chrome-storage": {
+      "import": {
+        "types": "./esm/storages/chrome-storage.d.mts",
+        "default": "./esm/storages/chrome-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/chrome-storage.d.ts",
+        "default": "./lib/storages/chrome-storage.js"
+      },
+      "default": "./lib/storages/chrome-storage.js"
+    },
+    "./lib": "./lib/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./src": "./src/index.ts",
+    "./src/*.ts": "./src/*.ts",
+    "./src/*": "./src/*.ts",
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": ">=16.0.0"
   },
   "files": [
     "/src",
     "/lib",
+    "/esm",
+    "/storages",
     "LICENSE"
   ],
   "scripts": {
@@ -18,9 +85,16 @@
     "build:types": "tsc --emitDeclarationOnly",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "test": "jest --verbose",
+    "test:random": "jest --randomize --showSeed",
     "test:watch": "npm test -- --watchAll",
     "lint": "biome check",
     "lint:fix": "biome check --write",
+    "check:package": "node scripts/check-package.mjs",
+    "check:publint": "npx --yes publint",
+    "check:attw": "npx --yes @arethetypeswrong/cli --pack . --exclude-entrypoints lib",
+    "check:smoke": "node scripts/smoke.mjs",
+    "check:types": "tsc -p tsconfig.package.json --noEmit",
+    "prepublishOnly": "npm run build",
     "format": "biome format --write",
     "release": "dotenv release-it",
     "demo": "vite",
@@ -30,26 +104,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Akurganow/use-persisted-state.git"
-  },
-  "release-it": {
-    "hooks": {
-      "before:init": [
-        "npm run lint",
-        "npm run typecheck",
-        "npm test",
-        "npm run build"
-      ],
-      "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
-    },
-    "npm": {
-      "skipChecks": true
-    },
-    "plugins": {
-      "@release-it/conventional-changelog": {
-        "preset": "conventionalcommits",
-        "infile": "CHANGELOG.md"
-      }
-    }
   },
   "keywords": [
     "react",
@@ -63,6 +117,7 @@
   ],
   "author": "Alexander Kurganov <a.kurganow@gmail.com>",
   "license": "MIT",
+  "funding": "https://ko-fi.com/akurganow",
   "publishConfig": {
     "access": "public"
   },
@@ -73,21 +128,20 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.6",
     "@release-it/conventional-changelog": "^12.0.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.0",
-    "@types/chrome": "0.2.2",
+    "@types/chrome": "^0.2.2",
     "@types/firefox-webext-browser": "^143.0.0",
     "@types/jest": "^30.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "conventional-changelog-cli": "^5.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
     "dotenv-cli": "^11.0.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "jest-localstorage-mock": "^2.4.6",
     "jest-webextension-mock": "^4.0.0",
-    "process": "^0.11.10",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "release-it": "^21.0.0",
@@ -96,8 +150,8 @@
     "vite": "^8.2.0"
   },
   "peerDependencies": {
-    "react": ">=16.8.0 || >=18.0.0 || >=19.0.0",
-    "react-dom": ">=16.8.0 || >=18.0.0 || >=19.0.0"
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
   },
   "dependencies": {
     "@plq/is": "^1.2.0"

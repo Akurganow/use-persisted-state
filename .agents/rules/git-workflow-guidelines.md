@@ -21,10 +21,13 @@ them. A wrong type ships a wrong version to everyone who installs the package.
 
 | Type | Effect on the release |
 | --- | --- |
-| `fix:` | patch |
+| `fix:`, `perf:`, `revert:` | patch |
 | `feat:` | minor |
 | `BREAKING CHANGE:` in the body | major |
 | `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
+
+The table is enforced by the `whatBump` in `.release-it.js`, not by the preset's default; see
+[project overview](project-overview.md) before changing either.
 
 Use the body to explain **why** the change was made and what it costs. The diff already shows what
 changed; it cannot show what you rejected and why.
@@ -40,6 +43,9 @@ Committing, pushing, opening a pull request and releasing are four separate acti
 needs its own explicit instruction, every time. Being told to commit is not permission to push. Being
 told to push is not permission to open a pull request. Being asked to prepare a release is not
 permission to publish one.
+
+Anything that lands on `main` runs the release workflow, so permission to merge is permission to
+publish — there is no separate step left to withhold.
 
 When in doubt, stop and ask. An unwanted local commit costs a moment; an unwanted push or publish is
 visible to everyone and cannot be quietly undone.
