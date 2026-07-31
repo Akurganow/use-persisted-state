@@ -12,16 +12,28 @@ tags:
 Jest with ts-jest and React Testing Library in a jsdom environment. Storage is mocked with
 `jest-localstorage-mock` and `jest-webextension-mock`.
 
-### A test must be proven able to fail
+### A test that cannot fail is worthless
 
-Before a test counts as coverage, watch it go **red** against the broken or unfixed code, then green
-after the fix. A test that passes both before and after the change tests nothing, and it is worse than
-no test, because it manufactures confidence.
+A test which stays green whether the behaviour works or not proves nothing, and is worse than no test
+because it manufactures confidence. Every test should be capable of failing for the reason it claims
+to check.
 
-For a bug fix this is not optional: write the test, run it against the unfixed code, keep the failure
-output, then fix. For a behaviour-preserving refactor the bar is different — there is no failure to
-produce, so the standard is that the entire existing suite is green before and after, with no test
-temporarily broken for ceremony.
+How far to go proving that is a judgement call, made per case rather than by ritual:
+
+- **Watch it go red first** when the failure is the point — a reported bug, a subtle condition, a
+  regression you are locking down. Seeing the exact failure is what proves the test aims at the real
+  defect and not next to it.
+- **Skip the ceremony** when the test plainly cannot pass by construction, or when the change is
+  mechanical and the assertion is obvious.
+- **Reach for a mutation audit** when false green is genuinely plausible — wide tolerances, assertions
+  that echo their own input, suites that might be running against the wrong branch, environment or
+  build. Break the code deliberately, confirm the test notices. Prefer someone other than the author
+  to run it.
+- **A behaviour-preserving refactor has no red phase at all.** The bar is the whole existing suite
+  green before and after, with nothing broken for ceremony.
+
+Judge which of these a change actually needs. Applying all of them to everything is as wrong as
+applying none.
 
 ### Never enshrine a bug as the contract
 

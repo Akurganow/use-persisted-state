@@ -1,28 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
-  "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Dependency Dashboard",
-  "dependencyDashboardAutoclose": true,
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["patch", "pin", "digest"],
-      "automerge": true
-    },
-    {
-      "matchUpdateTypes": ["minor"],
-      "matchCurrentVersion": "!/^0\\./",
-      "automerge": true
-    },
-    {
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["minor"],
-      "automerge": true
-    }
-  ],
-  "platformAutomerge": true,
-  "automergeType": "pr",
-  "automergeStrategy": "merge-commit"
+  "enabled": false,
+  "description": [
+    "Dependency updates are handled by Dependabot (.github/dependabot.yml).",
+    "Running both bots produces competing pull requests for the same dependency.",
+    "This file is kept rather than deleted: with no config present Renovate falls",
+    "back to its defaults and re-runs onboarding, so disabling has to be explicit."
+  ]
 }
