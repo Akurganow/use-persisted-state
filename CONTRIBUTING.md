@@ -49,6 +49,7 @@ consumers even when the type signature is untouched.
 | --- | --- |
 | Run tests | `npm test` |
 | Run tests in watch mode | `npm run test:watch` |
+| Type-check the tests | `npm run typecheck` |
 | Lint (Biome) | `npm run lint` |
 | Lint and apply safe fixes | `npm run lint:fix` |
 | Format | `npm run format` |
@@ -104,8 +105,9 @@ Use the body to explain **why** the change was made. The diff already shows what
    dependencies — the package deliberately has exactly one (`@plq/is`) and is chosen for being
    small. Do not edit `lib/` (build output) or `CHANGELOG.md` (generated on release), and do not
    bump the version in `package.json` — releases handle both.
-4. **Verify locally:** `npm run lint`, `npm test` and `npm run build` must all pass. CI runs the
-   same three steps on Linux, macOS and Windows for every pull request.
+4. **Verify locally:** `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` must all
+   pass. CI runs those four on Linux, macOS and Windows for every pull request, and
+   `npm run check:package` on the build output.
 5. **Open the pull request** against `main` and fill in the template. Keep the title in the
    Conventional Commits format, since it determines the released version once merged.
 6. **Update documentation** (README, `docs/`) when the public API or observable behaviour changes.

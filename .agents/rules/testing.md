@@ -37,9 +37,10 @@ applying none.
 
 ### Never enshrine a bug as the contract
 
-This repository already contains tests that assert the defect. Cases state that `null` "is not saved,
-so the initial value stays" — while the real behaviour is that `null` **is** written to storage and
-then fails to read back. The test locked the bug in and made it invisible to everyone after.
+This repository carried exactly that for a long time. Cases stated that `null` "is not saved, so the
+initial value stays", when the real behaviour was that `null` **was** written to storage and then
+failed to read back. The test locked the bug in and made it invisible to everyone after; the cases in
+`__tests__/data-types.test.tsx` now assert the round trip instead.
 
 When behaviour looks wrong, fix the behaviour and the test. Never write an assertion whose only
 justification is "this is what the code currently does".

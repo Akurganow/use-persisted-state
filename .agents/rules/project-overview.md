@@ -26,9 +26,16 @@ a signature or to observable behaviour breaks strangers' builds.
 | --- | --- |
 | Install | `npm ci` |
 | Test | `npm test` |
+| Type check | `npm run typecheck` |
 | Lint | `npm run lint` |
 | Build | `npm run build` |
+| Check the published package | `npm run check:package` (needs `npm run build` first) |
 | Demo dev server | `npm run demo` |
+
+`typecheck` is the only gate that type-checks the test suite — `ts-jest` transpiles per file without
+checking types, so a type error in a test reaches `main` unnoticed without it. `check:package` packs
+a tarball and resolves every published specifier through both module systems, then checks the
+wrapper declarations, `publint` and `attw`; see [packaging](../../docs/packaging.md).
 
 ### Versioning
 

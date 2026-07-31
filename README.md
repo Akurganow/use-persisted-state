@@ -61,7 +61,7 @@ const [usePersistedState, clear] = createPersistedState(name, storage)
 - `name` — a namespace for this factory. All keys created by the returned hook are stored together in a single storage entry named `persisted_state_hook:<name>`.
 - `storage` — a synchronous or asynchronous storage backend implementing the [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md).
 
-Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous by probing it: each of `get`, `set` and `remove` is called once (`get('')`, `set({})`, `remove('')`) to see whether it returns a `Promise`. If your backend must not be called during setup, import one of the named factories below instead — they skip detection entirely.
+Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous from the shape of its methods wherever it can — a `get` declared `async`, or one that is already a `Promise`, settles the question without a call. Only when neither holds does it call `get('')` once to see whether the result is a `Promise`; `set` and `remove` are never invoked, so detection cannot write to your storage. If even a read during setup is undesirable, import one of the named factories below instead — they skip detection entirely.
 
 ### Named factories
 
@@ -230,16 +230,19 @@ persisted_state_hook:example → {"count":0}
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
-## Known issues
+### Values JSON cannot carry
 
-These are defects, not intended behaviour, and are tracked for a fix. They are listed so you are
-not caught out by them in the meantime.
+A few values do not survive `JSON.stringify`. This follows from the format rather than from a choice
+the library makes, and no adapter can repair it: once a value has been written, nothing in storage
+tells a `null` you stored apart from a `null` that JSON produced.
 
-- **`null` does not survive a round trip.** Setting a value to `null` writes it to storage, but on
-  the next read the hook falls back to the initial value instead of returning `null`. Use a
-  sentinel value if you need to represent "empty" today.
-- **`undefined` is not persisted.** `JSON.stringify` drops it, so the key disappears and the
+- **`undefined`** — the key is dropped, so nothing reaches storage at all. The component that set it
+  keeps `undefined` in memory, as `useState` would, and other components already mounted on that key
+  see no change and keep the value they hold. After a remount or a reload the key is absent, so the
   initial value comes back.
+- **`NaN`, `Infinity`, `-Infinity`** — these are written as `null`. The component that set the value
+  keeps it until it remounts; every other component on that key reads back `null`, as does any
+  reader after a reload.
 
 ## Contributing
 

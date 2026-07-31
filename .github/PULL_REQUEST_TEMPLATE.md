@@ -18,6 +18,7 @@
 
 - [ ] The PR title follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format and the type matches the change
 - [ ] `npm run lint` passes
+- [ ] `npm run typecheck` passes
 - [ ] `npm test` passes, with tests added or updated for behaviour changes
 - [ ] `npm run build` passes
 - [ ] Documentation (README, `docs/`) is updated if the public API or observable behaviour changed
