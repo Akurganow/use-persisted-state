@@ -242,6 +242,27 @@ describe('own writes', () => {
   })
 })
 
+describe('foreign entries under the factory key', () => {
+  const entryKey = 'persisted_state_hook:foreign'
+  const [usePersistedState] = createPersistedState('foreign', storage)
+
+  beforeEach(() => {
+    cleanup()
+    localStorage.clear()
+  })
+
+  test('mounts on its initial value when the entry is a bare JSON primitive', () => {
+    localStorage.setItem(entryKey, '5')
+
+    const { result } = renderHook(() => usePersistedState('foo', 'initial'))
+
+    // Another writer on the same backend can leave any JSON under the key. The
+    // read happens in the useState initializer, so a throw here does not degrade
+    // the hook, it stops the component mounting at all.
+    expect(result.current[0]).toBe('initial')
+  })
+})
+
 describe('setter identity', () => {
   const [usePersistedState] = createPersistedState('identity', storage)
 

@@ -1,4 +1,4 @@
-import { isFunction } from '@plq/is'
+import { isFunction, isObject } from '@plq/is'
 
 /**
  * Resolves the value a hook starts from: the persisted entry for `key` when the stored payload
@@ -8,7 +8,7 @@ import { isFunction } from '@plq/is'
  * the value the user set instead of being mistaken for an absence and replaced.
  */
 export default function getPersistedValue<T>(key: string, initialValue: T | (() => T), persist?: string): T {
-  let initialPersist: { [x: string]: unknown }
+  let initialPersist: unknown
 
   try {
     initialPersist = persist ? JSON.parse(persist) : {}
@@ -23,7 +23,10 @@ export default function getPersistedValue<T>(key: string, initialValue: T | (() 
 
   let initialOrPersistedValue = isFunction(initialValue) ? initialValue() : initialValue
 
-  if (initialPersist && key in initialPersist) {
+  // `JSON.parse` yields any JSON value, so a foreign entry can be a primitive,
+  // and `in` throws on one. This runs in the `useState` initializer, where a
+  // throw stops the component mounting instead of falling back.
+  if (isObject(initialPersist) && key in initialPersist) {
     initialOrPersistedValue = initialPersist[key] as T
   }
 

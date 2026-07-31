@@ -141,6 +141,25 @@ describe('use-storage-handler', () => {
       expect(applyValue).not.toHaveBeenCalled()
     })
 
+    test('says nothing about an entry that is a bare JSON primitive', () => {
+      const { storage, fire } = createSpyStorage()
+      const applyValue = jest.fn()
+      const pendingOwnWrite = createOwnWriteRecord()
+
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite))
+
+      // A number parses, so this is not a broken entry: it is a foreign one, as
+      // routine as an entry carrying only other keys. `in` throws on it, and the
+      // throw runs inside the adapter's notify loop, so it would take out every
+      // listener queued behind this one as well.
+      act(() => {
+        fire({ [storageKey]: { oldValue: null, newValue: '5' } })
+      })
+
+      expect(consoleError).not.toHaveBeenCalled()
+      expect(applyValue).not.toHaveBeenCalled()
+    })
+
     test('says nothing about an entry that simply does not carry the key', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()

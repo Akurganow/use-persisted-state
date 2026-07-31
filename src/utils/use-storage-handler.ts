@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 import type { AsyncStorage, Storage, StorageChange } from '../@types/storage'
-import { isFunction } from '@plq/is'
+import { isFunction, isObject } from '@plq/is'
 
 /**
  * One key read out of a serialized entry. `null` is a value a caller can store,
@@ -27,9 +27,12 @@ function readStoredValue<T>(key: string, entry: string): StoredValue<T> {
     return { status: 'unavailable' }
   }
 
-  if (!parsed || !(key in (parsed as object))) return { status: 'unavailable' }
+  // A foreign entry can be any JSON value, and `in` throws on a primitive. This
+  // runs inside the adapter's notify loop, where a throw also cuts off every
+  // listener queued behind this one.
+  if (!isObject(parsed) || !(key in parsed)) return { status: 'unavailable' }
 
-  return { status: 'stored', value: (parsed as Record<string, unknown>)[key] as T }
+  return { status: 'stored', value: parsed[key] as T }
 }
 
 // Restores the initial value when the whole entry is removed from the storage.
