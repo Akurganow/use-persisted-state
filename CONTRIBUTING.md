@@ -34,8 +34,10 @@ npm ci
 | `src/@types/` | Public type definitions |
 | `__tests__/` | Jest test suite |
 | `demo/` | Vite example app (not published) |
-| `docs/` | Documentation, including the [storage API](docs/storage-api.md) |
+| `docs/` | Documentation, including the [storage API](docs/storage-api.md) and [packaging](docs/packaging.md) |
 | `lib/` | Build output produced by `tsc` — never edit it by hand |
+| `esm/`, `storages/` | Hand-written wrappers over `lib/` — see [packaging](docs/packaging.md) |
+| `scripts/` | Package checks run by `npm run check:package` |
 
 Everything under `src/` is public API that other projects depend on. A change to a signature or to
 observable behaviour — what the hook returns, when it re-renders, what lands in storage — affects
@@ -52,6 +54,7 @@ consumers even when the type signature is untouched.
 | Format | `npm run format` |
 | Build the library | `npm run build` |
 | Build in watch mode | `npm run build:watch` |
+| Check what would be published | `npm run check:package` (needs `npm run build` first) |
 | Run the demo app | `npm run demo` |
 
 ## Testing

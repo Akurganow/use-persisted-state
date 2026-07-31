@@ -31,7 +31,7 @@ npm install @plq/use-persisted-state
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/lib/storages/local-storage'
+import storage from '@plq/use-persisted-state/storages/local-storage'
 
 const [usePersistedState] = createPersistedState('example', storage)
 
@@ -99,7 +99,7 @@ import type { Storage, AsyncStorage } from '@plq/use-persisted-state/lib/@types/
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/lib/storages/local-storage'
+import storage from '@plq/use-persisted-state/storages/local-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 
@@ -121,7 +121,7 @@ export default function App() {
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import storage from '@plq/use-persisted-state/lib/storages/session-storage'
+import storage from '@plq/use-persisted-state/storages/session-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', storage)
 ```
@@ -132,7 +132,7 @@ const [usePersistedState, clear] = createPersistedState('example', storage)
 import createPersistedState from '@plq/use-persisted-state'
 // or, to skip async detection:
 import { createAsyncPersistedState } from '@plq/use-persisted-state'
-import { local } from '@plq/use-persisted-state/lib/storages/browser-storage'
+import { local } from '@plq/use-persisted-state/storages/browser-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', local)
 ```
@@ -175,24 +175,29 @@ const [usePersistedState, clear] = createPersistedState('example', myStorage)
 
 ## Storage adapters
 
-### [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage) `@plq/use-persisted-state/lib/storages/local-storage`
+The longer `@plq/use-persisted-state/lib/storages/…` paths that earlier versions documented continue
+to work. Prefer the shorter ones below: imported from ES module code, the `lib` path hands back the
+CommonJS exports object rather than the adapter, so it needs an extra `.default` that the shorter
+path does not.
+
+### [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage) `@plq/use-persisted-state/storages/local-storage`
 
 - Useful for the average web application.
 - Synchronous. Changes made in other browser tabs are picked up through the [`storage` event](https://developer.mozilla.org/docs/Web/API/Window/storage_event).
 
-### [sessionStorage](https://developer.mozilla.org/docs/Web/API/Window/sessionStorage) `@plq/use-persisted-state/lib/storages/session-storage`
+### [sessionStorage](https://developer.mozilla.org/docs/Web/API/Window/sessionStorage) `@plq/use-persisted-state/storages/session-storage`
 
 - Useful for state that should not outlive the browser session.
 - Synchronous.
 
-### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/lib/storages/browser-storage`
+### [browser.storage](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage) `@plq/use-persisted-state/storages/browser-storage`
 
 - Only for web extensions. Asynchronous.
 - Named exports for each storage area: `local`, `sync` and `managed` (note that the [managed area](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage/managed) is read-only for the extension).
 - Don't forget to set up the [polyfill](https://github.com/mozilla/webextension-polyfill) if you want to run the extension in a Chromium-based browser.
 - You need to declare the "storage" [permission](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions) in your `manifest.json` file.
 
-### [chrome.storage](https://developer.chrome.com/docs/extensions/reference/api/storage) `@plq/use-persisted-state/lib/storages/chrome-storage`
+### [chrome.storage](https://developer.chrome.com/docs/extensions/reference/api/storage) `@plq/use-persisted-state/storages/chrome-storage`
 
 - Only for Chromium-based web extensions. Asynchronous.
 - Named exports for each storage area: `local`, `sync` and `managed` (the managed area is read-only for the extension).
@@ -201,7 +206,7 @@ const [usePersistedState, clear] = createPersistedState('example', myStorage)
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
-import { local } from '@plq/use-persisted-state/lib/storages/chrome-storage'
+import { local } from '@plq/use-persisted-state/storages/chrome-storage'
 
 const [usePersistedState, clear] = createPersistedState('example', local)
 ```

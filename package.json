@@ -2,14 +2,81 @@
   "name": "@plq/use-persisted-state",
   "version": "1.3.0",
   "description": "useState hook with persistence in storage",
+  "type": "commonjs",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./esm/index.d.mts",
+        "default": "./esm/index.mjs"
+      },
+      "require": {
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.js"
+      },
+      "default": "./lib/index.js"
+    },
+    "./storages/local-storage": {
+      "import": {
+        "types": "./esm/storages/local-storage.d.mts",
+        "default": "./esm/storages/local-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/local-storage.d.ts",
+        "default": "./lib/storages/local-storage.js"
+      },
+      "default": "./lib/storages/local-storage.js"
+    },
+    "./storages/session-storage": {
+      "import": {
+        "types": "./esm/storages/session-storage.d.mts",
+        "default": "./esm/storages/session-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/session-storage.d.ts",
+        "default": "./lib/storages/session-storage.js"
+      },
+      "default": "./lib/storages/session-storage.js"
+    },
+    "./storages/browser-storage": {
+      "import": {
+        "types": "./esm/storages/browser-storage.d.mts",
+        "default": "./esm/storages/browser-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/browser-storage.d.ts",
+        "default": "./lib/storages/browser-storage.js"
+      },
+      "default": "./lib/storages/browser-storage.js"
+    },
+    "./storages/chrome-storage": {
+      "import": {
+        "types": "./esm/storages/chrome-storage.d.mts",
+        "default": "./esm/storages/chrome-storage.mjs"
+      },
+      "require": {
+        "types": "./lib/storages/chrome-storage.d.ts",
+        "default": "./lib/storages/chrome-storage.js"
+      },
+      "default": "./lib/storages/chrome-storage.js"
+    },
+    "./lib": "./lib/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./src": "./src/index.ts",
+    "./src/*.ts": "./src/*.ts",
+    "./src/*": "./src/*.ts",
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": ">=16.0.0"
   },
   "files": [
     "/src",
     "/lib",
+    "/esm",
+    "/storages",
     "LICENSE"
   ],
   "scripts": {
@@ -21,6 +88,12 @@
     "test:watch": "npm test -- --watchAll",
     "lint": "biome check",
     "lint:fix": "biome check --write",
+    "check:package": "node scripts/check-package.mjs",
+    "check:publint": "npx --yes publint",
+    "check:attw": "npx --yes @arethetypeswrong/cli --pack . --exclude-entrypoints lib",
+    "check:smoke": "node scripts/smoke.mjs",
+    "check:types": "tsc -p tsconfig.package.json --noEmit",
+    "prepublishOnly": "npm run build",
     "format": "biome format --write",
     "release": "dotenv release-it",
     "demo": "vite",
@@ -37,7 +110,8 @@
         "npm run lint",
         "npm run typecheck",
         "npm test",
-        "npm run build"
+        "npm run build",
+        "npm run check:package"
       ],
       "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
     },
@@ -63,6 +137,7 @@
   ],
   "author": "Alexander Kurganov <a.kurganow@gmail.com>",
   "license": "MIT",
+  "funding": "https://ko-fi.com/akurganow",
   "publishConfig": {
     "access": "public"
   },

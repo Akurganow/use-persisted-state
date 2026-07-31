@@ -115,6 +115,13 @@ jobs:
     - name: Build
       run: npm run build --if-present
 
+    # A packed-tarball smoke matrix, the wrapper declarations, publint and attw:
+    # the ESM wrappers and the exports map are hand-written, so only a real pack
+    # proves they resolve. Runs after Build because it checks the output.
+    # See docs/packaging.md.
+    - name: Verify package exports
+      run: npm run check:package
+
     - name: Upload packages
       uses: actions/upload-artifact@v7
       with:
