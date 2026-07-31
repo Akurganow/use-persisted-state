@@ -38,10 +38,27 @@ flowchart LR
 
 ### The rule the map follows
 
-**The map does not narrow anything that resolves today.** Before this change the package had no
+**The map keeps resolving every path a consumer can import.** Before this change the package had no
 `exports` field at all, so every path inside the published tarball resolved for every consumer. An
-`exports` field is the first thing capable of taking one of those away, and taking one away would be
-a regression introduced by the very mechanism added to prevent regressions.
+`exports` field is the first thing capable of taking one of those away, and taking away a path
+someone imports would be a regression introduced by the very mechanism added to prevent regressions.
+
+That is a principle about importable paths, not a claim that nothing in the tarball changed
+reachability, and the difference is measured rather than asserted. Packing both versions, installing
+each into a throwaway consumer and resolving every published file as a specifier: without the map all
+83 files resolve; with it, 74 of 111 do not, and 50 of those 74 shipped before — 32 `.map` files, 16
+`.d.ts` files, `LICENSE` and `README.md`.
+
+Not one of the 50 is a specifier anybody writes, which is where the principle holds. `exports`
+governs specifier resolution, not file access: every one of those files is still in the tarball and
+still readable by path. Source maps are fetched by relative URL from the emitted `.js`, declarations
+reach TypeScript through the `types` condition in the map, and `LICENSE` and `README.md` are read
+from the package directory by tooling that never resolves them as specifiers. No broken consumer has
+been produced.
+
+The narrowing is confined to resolvers that implement `exports` — `node16` and `bundler`. Under
+`moduleResolution: node`/`node10` nothing narrows at all, because that resolver never reads the
+field.
 
 That rule decides both awkward cases below — `./lib/*` and `./src/*` — and it decides them the same
 way, which is the point. Closing either one is a future major's work, announced as such. The map is
