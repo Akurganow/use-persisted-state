@@ -1,4 +1,3 @@
-import React from 'react'
 import createPersistedState from '../src'
 import { render, renderHook, cleanup, act, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
@@ -15,17 +14,13 @@ describe('Integration Tests', () => {
     localStorage.clear()
   })
 
-  test('should create async hook if provided async storage', async function () {
+  test('should create async hook if provided async storage', async () => {
     const { result } = renderHook(() => useAsyncPersistedState('foo', 'bar'))
     const [, setValue] = result.current
 
-    await act(() =>
-      expect(setValue('baz')).resolves.toBeUndefined(),
-    )
+    await act(() => expect(setValue('baz')).resolves.toBeUndefined())
 
-    await act(() =>
-      expect(clearAsync()).resolves.toBeUndefined(),
-    )
+    await act(() => expect(clearAsync()).resolves.toBeUndefined())
   })
 
   test('Component should rerender from change to local storage', () => {
@@ -42,10 +37,7 @@ describe('Integration Tests', () => {
       const [, setCount] = useSyncPersistedState('count', initialValue)
 
       return (
-        <button
-          onClick={() => setCount(prev => prev + 1)}
-          data-testid={testButtonId}
-        >
+        <button type="button" onClick={() => setCount(prev => prev + 1)} data-testid={testButtonId}>
           Test Button
         </button>
       )
@@ -76,6 +68,7 @@ describe('Integration Tests', () => {
 
       return (
         <button
+          type="button"
           onClick={() => {
             setCount(prev => prev + 1)
           }}
@@ -111,6 +104,7 @@ describe('Integration Tests', () => {
 
       return (
         <button
+          type="button"
           onClick={() => {
             setCount(prev => prev + 1)
           }}
@@ -123,6 +117,7 @@ describe('Integration Tests', () => {
     const ClearButton = () => {
       return (
         <button
+          type="button"
           onClick={() => {
             clearSync()
           }}
@@ -164,7 +159,10 @@ describe('Integration Tests', () => {
 
       return (
         <button
-          onClick={() => { setCount(initialValue + 1) }}
+          type="button"
+          onClick={() => {
+            setCount(initialValue + 1)
+          }}
           data-testid={testButtonId}
         >
           Test Button
@@ -176,7 +174,10 @@ describe('Integration Tests', () => {
 
       return (
         <button
-          onClick={() => { setCount(initialValue) }}
+          type="button"
+          onClick={() => {
+            setCount(initialValue)
+          }}
           data-testid={testInitialButtonId}
         >
           Test Button

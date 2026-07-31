@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 import { isFunction } from '@plq/is'
 
 export default function <T>(newState: React.SetStateAction<T>, state: T): T {

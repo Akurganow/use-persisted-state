@@ -1,4 +1,4 @@
-export default function<T>(key: string, persistedItem: string, newValue: T): string {
+export default function <T>(key: string, persistedItem: string, newValue: T): string {
   let persist: { [x: string]: unknown }
 
   try {

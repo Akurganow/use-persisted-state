@@ -1,4 +1,4 @@
-import { AsyncStorage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
+import type { AsyncStorage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
 
 const listeners = {
   local: new Set<StorageChangeListener>(),
@@ -43,8 +43,4 @@ const local = createStorage(browser.storage.local, 'local')
 const sync = createStorage(browser.storage.sync, 'sync')
 const managed = createStorage(browser.storage.managed, 'managed')
 
-export {
-  local,
-  sync,
-  managed,
-}
+export { local, sync, managed }

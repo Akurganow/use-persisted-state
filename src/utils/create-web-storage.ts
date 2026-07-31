@@ -1,4 +1,4 @@
-import { Storage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
+import type { Storage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
 
 const listeners = new Set<StorageChangeListener>()
 
@@ -102,4 +102,3 @@ export default (storage: globalThis.Storage): Storage => ({
   },
   onChanged,
 })
-

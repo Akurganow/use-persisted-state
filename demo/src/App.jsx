@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import LocalStorageExample from './examples/LocalStorageExample'
 import SessionStorageExample from './examples/SessionStorageExample'
 import AsyncStorageExample from './examples/AsyncStorageExample'
@@ -22,6 +22,7 @@ function App() {
         {examples.map(example => (
           <button
             key={example.id}
+            type="button"
             onClick={() => setActiveExample(example.id)}
             style={{
               marginRight: '10px',

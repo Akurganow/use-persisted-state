@@ -1,9 +1,9 @@
-import createWebStorage  from '../../src/utils/create-web-storage'
+import createWebStorage from '../../src/utils/create-web-storage'
 
-describe('create-web-storage', function () {
+describe('create-web-storage', () => {
   const storage = createWebStorage(localStorage)
 
-  test('should create valid storage', function () {
+  test('should create valid storage', () => {
     expect(storage.get).toBeDefined()
     expect(storage.set).toBeDefined()
     expect(storage.remove).toBeDefined()
@@ -12,7 +12,7 @@ describe('create-web-storage', function () {
     expect(storage.onChanged.hasListener).toBeDefined()
   })
 
-  test('should add and remove listener', function () {
+  test('should add and remove listener', () => {
     const listener = jest.fn()
 
     storage.onChanged.addListener(listener)
@@ -24,12 +24,12 @@ describe('create-web-storage', function () {
     expect(storage.onChanged.hasListener(listener)).toBe(false)
   })
 
-  test('should work correctly', function () {
-    storage.set({key1: 'foo'})
+  test('should work correctly', () => {
+    storage.set({ key1: 'foo' })
 
-    expect(storage.get('key1')).toEqual({key1: 'foo'})
+    expect(storage.get('key1')).toEqual({ key1: 'foo' })
 
-    storage.set({key2: 'bar', key3: 'baz'})
+    storage.set({ key2: 'bar', key3: 'baz' })
 
     expect(storage.get(['key2', 'key3'])).toEqual({
       key2: 'bar',

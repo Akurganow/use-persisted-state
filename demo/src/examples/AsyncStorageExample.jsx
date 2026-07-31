@@ -1,4 +1,3 @@
-import React from 'react'
 import createPersistedState from '@plq/use-persisted-state'
 
 let listeners = []
@@ -23,70 +22,73 @@ window.addEventListener('storage', event => {
 })
 
 const storage = {
-  get: keys => new Promise(resolve => {
-    const result = {}
+  get: keys =>
+    new Promise(resolve => {
+      const result = {}
 
-    if (Array.isArray(keys)) {
-      keys.forEach(key => {
-        const item = localStorage.getItem(key)
+      if (Array.isArray(keys)) {
+        keys.forEach(key => {
+          const item = localStorage.getItem(key)
 
-        if (item) result[key] = item
-      })
-    } else {
-      const item = localStorage.getItem(keys)
+          if (item) result[key] = item
+        })
+      } else {
+        const item = localStorage.getItem(keys)
 
-      if (item) result[keys] = item
-    }
-
-    resolve(result)
-  }),
-  set: items => new Promise(resolve => {
-    const changes = {}
-
-    Object.entries(items).forEach(([key, value]) => {
-      const oldValue = localStorage.getItem(key)
-
-      localStorage.setItem(key, value)
-
-      changes[key] = {
-        oldValue,
-        newValue: value,
+        if (item) result[keys] = item
       }
-    })
 
-    fireStorageEvent(changes)
+      resolve(result)
+    }),
+  set: items =>
+    new Promise(resolve => {
+      const changes = {}
 
-    resolve()
-  }),
-  remove: keys => new Promise(resolve => {
-    const changes = {}
-
-    if (Array.isArray(keys)) {
-      keys.forEach(key => {
+      Object.entries(items).forEach(([key, value]) => {
         const oldValue = localStorage.getItem(key)
 
-        localStorage.removeItem(key)
+        localStorage.setItem(key, value)
 
         changes[key] = {
           oldValue,
-          newValue: null,
+          newValue: value,
         }
       })
-    } else {
-      const oldValue = localStorage.getItem(keys)
 
-      localStorage.removeItem(keys)
+      fireStorageEvent(changes)
 
-      changes[keys] = {
-        oldValue,
-        newValue: null,
+      resolve()
+    }),
+  remove: keys =>
+    new Promise(resolve => {
+      const changes = {}
+
+      if (Array.isArray(keys)) {
+        keys.forEach(key => {
+          const oldValue = localStorage.getItem(key)
+
+          localStorage.removeItem(key)
+
+          changes[key] = {
+            oldValue,
+            newValue: null,
+          }
+        })
+      } else {
+        const oldValue = localStorage.getItem(keys)
+
+        localStorage.removeItem(keys)
+
+        changes[keys] = {
+          oldValue,
+          newValue: null,
+        }
       }
-    }
 
-    fireStorageEvent(changes)
+      fireStorageEvent(changes)
 
-    resolve()
-  }),
+      resolve()
+    }),
   onChanged: {
     addListener(listener) {
       listeners.push(listener)
@@ -109,17 +111,35 @@ function Actions() {
   return (
     <div>
       <button
+        type="button"
         onClick={() => {
           setCount(prevCount => prevCount - 1)
-        }}>
+        }}
+      >
         -
       </button>
-      <button onClick={() => { clear() }}>Clear</button>
-      <button onClick={() => { setCount(initialValue) }}>Initial</button>
       <button
+        type="button"
+        onClick={() => {
+          clear()
+        }}
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setCount(initialValue)
+        }}
+      >
+        Initial
+      </button>
+      <button
+        type="button"
         onClick={() => {
           setCount(prevCount => prevCount + 1)
-        }}>
+        }}
+      >
         +
       </button>
     </div>
@@ -129,9 +149,7 @@ function Actions() {
 function Count() {
   const [count] = usePersistedState('count', initialValue)
 
-  return (
-    <div>{count}</div>
-  )
+  return <div>{count}</div>
 }
 
 function AsyncStorageExample() {

@@ -1,17 +1,15 @@
-import React, {useEffect, useState} from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 
-import {Storage} from './@types/storage'
-import {PersistedState, UsePersistedState} from './@types/hook'
+import type { Storage } from './@types/storage'
+import type { PersistedState, UsePersistedState } from './@types/hook'
 
 import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
 
-export default function createPersistedState(
-  storageKey: string,
-  storage: Storage,
-): [PersistedState, () => void] {
+export default function createPersistedState(storageKey: string, storage: Storage): [PersistedState, () => void] {
   const safeStorageKey = `persisted_state_hook:${storageKey}`
   const clear = (): void => {
     storage.remove(safeStorageKey)
@@ -32,7 +30,7 @@ export default function createPersistedState(
       const persistedItem = storage.get(safeStorageKey)[safeStorageKey]
       const newItem = getNewItem<T>(key, persistedItem, newValue)
 
-      storage.set({[safeStorageKey]: newItem})
+      storage.set({ [safeStorageKey]: newItem })
     }
 
     useEffect(() => {

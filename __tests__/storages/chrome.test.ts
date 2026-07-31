@@ -1,42 +1,45 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import * as chromeStorage from '../../src/storages/chrome-storage'
 
-describe('chrome-storage', function () {
+describe('chrome-storage', () => {
   const types: ('local' | 'sync' | 'managed')[] = ['local', 'sync', 'managed']
   types.forEach(type => {
-    describe(type, function () {
+    describe(type, () => {
       const storage = chromeStorage[type]
-      const storageMethods: ('get' | 'set' | 'remove')[] =
-        ['get', 'set', 'remove']
+      const storageMethods: ('get' | 'set' | 'remove')[] = ['get', 'set', 'remove']
       const storageMethodsTestParams = {
         get: 'key',
         set: { key: 'value' },
         remove: 'key',
       }
 
-      const onChangedMethods: ('addListener' | 'removeListener' | 'hasListener')[] =
-        ['addListener', 'removeListener', 'hasListener']
+      const onChangedMethods: ('addListener' | 'removeListener' | 'hasListener')[] = [
+        'addListener',
+        'removeListener',
+        'hasListener',
+      ]
 
       storageMethods.forEach(method => {
         const storageMethod = storage[method]
 
-        test(`${method} should be defined`, function () {
+        test(`${method} should be defined`, () => {
           expect(storageMethod).toBeDefined()
         })
 
-        test(`${type}.${method}`, function () {
-          // @ts-ignore
+        test(`${type}.${method}`, () => {
+          // @ts-expect-error
           storageMethod(storageMethodsTestParams[method])
 
-          expect(chrome.storage[type][method])
-            .toHaveBeenCalledTimes(1)
-          expect(chrome.storage[type][method])
-            .toHaveBeenCalledWith(storageMethodsTestParams[method], expect.any(Function))
+          expect(chrome.storage[type][method]).toHaveBeenCalledTimes(1)
+          expect(chrome.storage[type][method]).toHaveBeenCalledWith(
+            storageMethodsTestParams[method],
+            expect.any(Function),
+          )
         })
       })
 
       onChangedMethods.forEach(method => {
-        test(`onChanged.${method} should be defined`, function () {
+        test(`onChanged.${method} should be defined`, () => {
           expect(storage.onChanged[method]).toBeDefined()
         })
       })
@@ -44,13 +47,13 @@ describe('chrome-storage', function () {
       afterEach(() => {
         chrome.storage[type].clear()
 
-        // @ts-ignore
+        // @ts-expect-error
         chrome.storage[type].get.mockClear()
-        // @ts-ignore
+        // @ts-expect-error
         chrome.storage[type].set.mockClear()
-        // @ts-ignore
+        // @ts-expect-error
         chrome.storage[type].remove.mockClear()
-        // @ts-ignore
+        // @ts-expect-error
         chrome.storage[type].clear.mockClear()
       })
     })
