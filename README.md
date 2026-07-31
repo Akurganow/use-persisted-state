@@ -9,7 +9,7 @@ A React `useState` that persists to `localStorage`, `sessionStorage`, extension 
 
 ## Features
 
-- Persist state to `localStorage`, `sessionStorage`, extension storage, or almost anything else that implements the [storage API](docs/storage-api.md)
+- Persist state to `localStorage`, `sessionStorage`, extension storage, or almost anything else that implements the [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md)
 - One state factory serves as many keys as needed, so you don't have to call the factory for each variable
 - Supports both synchronous and asynchronous storage backends
 - Components using the same key stay in sync; with the `localStorage` adapter, changes also propagate across browser tabs
@@ -59,7 +59,7 @@ const [usePersistedState, clear] = createPersistedState(name, storage)
 ```
 
 - `name` — a namespace for this factory. All keys created by the returned hook are stored together in a single storage entry named `persisted_state_hook:<name>`.
-- `storage` — a synchronous or asynchronous storage backend implementing the [storage API](docs/storage-api.md).
+- `storage` — a synchronous or asynchronous storage backend implementing the [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md).
 
 Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous by probing it: each of `get`, `set` and `remove` is called once (`get('')`, `set({})`, `remove('')`) to see whether it returns a `Promise`. If your backend must not be called during setup, import one of the named factories below instead — they skip detection entirely.
 
@@ -139,7 +139,7 @@ const [usePersistedState, clear] = createPersistedState('example', local)
 
 ## Use custom storage
 
-The [storage API](docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences.
+The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences.
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
@@ -223,7 +223,7 @@ Each factory keeps all of its keys in a single storage entry named `persisted_st
 persisted_state_hook:example → {"count":0}
 ```
 
-Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](SECURITY.md)).
+Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
 ## Known issues
 
@@ -238,7 +238,7 @@ not caught out by them in the meantime.
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing and the commit convention, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards.
+Contributions are welcome — see [CONTRIBUTING.md](https://github.com/Akurganow/use-persisted-state/blob/main/CONTRIBUTING.md) for setup, testing and the commit convention, and [CODE_OF_CONDUCT.md](https://github.com/Akurganow/use-persisted-state/blob/main/CODE_OF_CONDUCT.md) for community standards.
 
 ## License
 
