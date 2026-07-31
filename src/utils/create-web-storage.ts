@@ -58,7 +58,9 @@ export default (storage: globalThis.Storage | undefined): Storage => {
       for (const key of toKeyList(keys)) {
         const item = storage.getItem(key)
 
-        if (item) result[key] = item
+        // `null` is the only answer that means absence: an empty string is a
+        // value the caller stored, and reporting it as a missing key loses it.
+        if (item !== null) result[key] = item
       }
 
       return result

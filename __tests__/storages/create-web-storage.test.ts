@@ -1,5 +1,30 @@
 import createWebStorage from '../../src/utils/create-web-storage'
 
+function createMemoryArea(entries: { [key: string]: string }): globalThis.Storage {
+  const store = new Map(Object.entries(entries))
+
+  return {
+    get length() {
+      return store.size
+    },
+    clear() {
+      store.clear()
+    },
+    getItem(key) {
+      return store.has(key) ? (store.get(key) as string) : null
+    },
+    key(index) {
+      return [...store.keys()][index] ?? null
+    },
+    removeItem(key) {
+      store.delete(key)
+    },
+    setItem(key, value) {
+      store.set(key, value)
+    },
+  }
+}
+
 describe('create-web-storage', function () {
   const storage = createWebStorage(localStorage)
 
@@ -43,6 +68,18 @@ describe('create-web-storage', function () {
     storage.remove(['key2', 'key3'])
 
     expect(storage.get(['key2', 'key3'])).toEqual({})
+  })
+
+  // Driven through a spec-faithful area rather than the global: the published
+  // build of jest-localstorage-mock reads `getItem` as `this[key] || null`, so
+  // its own store cannot hold an empty string and would hide the case entirely.
+  test('should read back a stored empty string', function () {
+    const emptyStringStorage = createWebStorage(createMemoryArea({ emptyKey: '' }))
+
+    // A real area answers `null` only for an absent key, so `''` is a value the
+    // caller stored. Reading it as absence drops it from the result and reports
+    // a removal that never happened.
+    expect(emptyStringStorage.get('emptyKey')).toEqual({ emptyKey: '' })
   })
 
   // Without a storage global the adapter is inert, but it still has to satisfy
