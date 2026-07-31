@@ -1,0 +1,65 @@
+name: Release
+
+# Manual rather than push-triggered: dependency updates land on main regularly,
+# and a push trigger would cut a release for each of them.
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: 'Version increment. Leave as "auto" to derive it from conventional commits.'
+        required: false
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+        default: auto
+      dry-run:
+        description: 'Run the whole release without publishing or pushing anything.'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  # Needed to commit the version bump, push the tag and create the release.
+  contents: write
+  # Needed for npm OIDC trusted publishing, which replaces a stored NPM_TOKEN.
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # @release-it/conventional-changelog derives the version from history.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.node-version'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Configure git
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: Release
+        # NODE_AUTH_TOKEN is deliberately absent: npm falls back to the legacy
+        # token path whenever it is set, instead of using OIDC.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INCREMENT: ${{ inputs.increment }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          args=()
+          [ "$INCREMENT" != 'auto' ] && args+=("$INCREMENT")
+          [ "$DRY_RUN" = 'true' ] && args+=('--dry-run')
+          npx release-it "${args[@]}" --ci

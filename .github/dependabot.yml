@@ -1,0 +1,62 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # A package published less than two weeks ago is not offered. Compromised
+    # releases are typically caught and unpublished within days, and this library
+    # gains nothing from being early. Security updates bypass the cooldown.
+    cooldown:
+      default-days: 14
+      semver-major-days: 14
+      semver-minor-days: 14
+      semver-patch-days: 14
+    groups:
+      # One pull request per toolchain instead of one per package: these move
+      # together and reviewing them apart wastes time.
+      types:
+        patterns:
+          - '@types/*'
+      jest:
+        patterns:
+          - jest
+          - jest-*
+          - ts-jest
+          - '@types/jest'
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+          - '@testing-library/*'
+      build-tooling:
+        patterns:
+          - vite
+          - '@vitejs/*'
+          - typescript
+          - '@biomejs/*'
+      release-tooling:
+        patterns:
+          - release-it
+          - '@release-it/*'
+          - conventional-changelog-cli
+          - dotenv-cli
+    open-pull-requests-limit: 5
+    commit-message:
+      # Conventional commits drive the released version, so dependency updates
+      # must not read as features or fixes.
+      prefix: chore
+      prefix-development: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: ci
