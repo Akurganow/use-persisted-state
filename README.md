@@ -80,7 +80,7 @@ const [state, setState] = usePersistedState(key, initialValue)
 
 Works like `useState`: returns the current state and a setter that accepts either a value or an updater function (`prev => next`). In addition, every update is written to the storage backend, and external changes to the stored value update the state.
 
-- Values are serialized with `JSON.stringify`, so they must be JSON-serializable (no functions, class instances, `Map`, `Set`, etc.).
+- Values are serialized with `JSON.stringify`, so they must be JSON-serializable (no functions, class instances, `Map`, `Set`, etc.). A few values serialize into something else rather than failing outright — see [Values JSON cannot carry](#values-json-cannot-carry).
 - With an asynchronous backend, the hook renders `initialValue` first and updates once the stored value has loaded.
 
 ### `clear()`
@@ -143,25 +143,12 @@ const [usePersistedState, clear] = createPersistedState('example', local)
 
 ## Use custom storage
 
-The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences.
+The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) is similar to the WebExtensions `browser.storage` API, with a few differences. Any object implementing it works:
 
 ```jsx
 import createPersistedState from '@plq/use-persisted-state'
 
 const storageListeners = new Set()
-
-onChangeSomeStorage(event => {
-  const changes = {
-    [event.key]: {
-      newValue: event.newValue,
-      oldValue: event.oldValue,
-    },
-  }
-
-  for (const listener of storageListeners) {
-    listener(changes)
-  }
-})
 
 const myStorage = {
   get: keys => getItemsFromSomeStorage(keys),
@@ -171,11 +158,13 @@ const myStorage = {
     addListener: listener => storageListeners.add(listener),
     removeListener: listener => storageListeners.delete(listener),
     hasListener: listener => storageListeners.has(listener),
-  }
+  },
 }
 
 const [usePersistedState, clear] = createPersistedState('example', myStorage)
 ```
+
+Your adapter owns that listener set and calls every listener when the backing store changes, which is what keeps components on the same key in sync. The [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md) documents the change payload and carries the complete example, including how to forward a backend's own events to the listeners.
 
 ## Storage adapters
 
