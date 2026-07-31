@@ -112,7 +112,10 @@ describe('use-storage-handler', () => {
     expect(applyValue).toHaveBeenCalledWith(null)
   })
 
-  describe('unreadable entries', () => {
+  // Neither case yields a value for the key, and the hook holds its state in
+  // both. What separates them is the diagnostic: a parse failure is a defect the
+  // consumer should hear about, an entry carrying only other keys is routine.
+  describe('entries that yield no value for the key', () => {
     let consoleError: jest.SpyInstance
 
     beforeEach(() => {
@@ -123,7 +126,7 @@ describe('use-storage-handler', () => {
       consoleError.mockRestore()
     })
 
-    test('reports an entry that will not parse rather than passing it off as an absent key', () => {
+    test('reports an entry that will not parse', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
       const pendingOwnWrite = createOwnWriteRecord()
@@ -135,6 +138,21 @@ describe('use-storage-handler', () => {
       })
 
       expect(consoleError).toHaveBeenCalled()
+      expect(applyValue).not.toHaveBeenCalled()
+    })
+
+    test('says nothing about an entry that simply does not carry the key', () => {
+      const { storage, fire } = createSpyStorage()
+      const applyValue = jest.fn()
+      const pendingOwnWrite = createOwnWriteRecord()
+
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite))
+
+      act(() => {
+        fire({ [storageKey]: { oldValue: null, newValue: JSON.stringify({ other: 'value' }) } })
+      })
+
+      expect(consoleError).not.toHaveBeenCalled()
       expect(applyValue).not.toHaveBeenCalled()
     })
   })

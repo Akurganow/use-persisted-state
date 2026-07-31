@@ -5,11 +5,16 @@ import { isFunction } from '@plq/is'
 
 /**
  * One key read out of a serialized entry. `null` is a value a caller can store,
- * so it has to stay distinguishable from a key that is not there and from an
- * entry that will not parse — collapsing the three is what dropped a persisted
- * `null` on its way from a change event into state.
+ * so a stored `null` has to stay distinguishable from no value at all —
+ * collapsing the two is what dropped a persisted `null` on its way from a change
+ * event into state.
+ *
+ * A key that is not in the entry and an entry that will not parse are both
+ * `unavailable`. They differ in why, not in what a caller does next, and the
+ * difference that matters is reported where it happens: only a parse failure is
+ * a defect worth a diagnostic, an entry holding other keys is routine.
  */
-type StoredValue<T> = { status: 'stored'; value: T } | { status: 'missing' } | { status: 'unreadable' }
+type StoredValue<T> = { status: 'stored'; value: T } | { status: 'unavailable' }
 
 function readStoredValue<T>(key: string, entry: string): StoredValue<T> {
   let parsed: unknown
@@ -19,10 +24,10 @@ function readStoredValue<T>(key: string, entry: string): StoredValue<T> {
   } catch (err) {
     console.error("use-persisted-state: Can't parse value from storage", err)
 
-    return { status: 'unreadable' }
+    return { status: 'unavailable' }
   }
 
-  if (!parsed || !(key in (parsed as object))) return { status: 'missing' }
+  if (!parsed || !(key in (parsed as object))) return { status: 'unavailable' }
 
   return { status: 'stored', value: (parsed as Record<string, unknown>)[key] as T }
 }
@@ -43,9 +48,10 @@ function applyRemoval<T>(
   // removal.
   const initialValue = isFunction(declaredInitialValue) ? declaredInitialValue() : declaredInitialValue
 
-  // An entry that would not parse cannot be shown to have held the initial value,
-  // so the fallback is applied rather than skipped. The entry is gone either way,
-  // and stale state left in place is worse than a redundant restore.
+  // An entry with no readable value for the key cannot be shown to have held the
+  // initial value, so the fallback is applied rather than skipped. The entry is
+  // gone either way, and stale state left in place is worse than a redundant
+  // restore.
   if (oldValue.status === 'stored' && oldValue.value === initialValue) return
 
   applyValue(initialValue)
