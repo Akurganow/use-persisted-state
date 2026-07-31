@@ -1,61 +1,74 @@
-import type { Storage, StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
-
-const listeners = new Set<StorageChangeListener>()
-
-function fireStorageEvent(changes: { [key: string]: StorageChange }) {
-  for (const listener of listeners) {
-    listener(changes)
-  }
-}
-
-globalThis.addEventListener('storage', event => {
-  if (event.key) {
-    const changes = {
-      [event.key]: {
-        newValue: event.newValue,
-        oldValue: event.oldValue,
-      },
-    }
-
-    fireStorageEvent(changes)
-  }
-})
+import type { Storage, StorageChange, StorageChangeEvent } from '../@types/storage'
+import { createChangeNotifier } from './change-notifier'
+import { addRoute, removeRoute, type StorageEventRoute } from './storage-event-router'
 
 function toKeyList(keys: string | string[]): string[] {
   return Array.isArray(keys) ? keys : [keys]
 }
 
-const onChanged: StorageChangeEvent = {
-  addListener(listener) {
-    listeners.add(listener)
-  },
-  removeListener(listener) {
-    listeners.delete(listener)
-  },
-  hasListener(listener) {
-    return listeners.has(listener)
-  },
-}
+/**
+ * Adapts a Web Storage area to the library's `Storage` contract.
+ *
+ * Pass `undefined` where the global is missing, as it is on a server: the
+ * adapter then reads back nothing and **silently discards every write**, so a
+ * consumer keeps its initial value instead of the import throwing. Listeners
+ * are still accepted and reported, they simply never fire.
+ */
+export default (storage: globalThis.Storage | undefined): Storage => {
+  // Per-instance notifier: the localStorage and sessionStorage adapters must not
+  // share listeners, or a write to one area notifies subscribers of the other.
+  const notifier = createChangeNotifier()
 
-export default (storage: globalThis.Storage): Storage => ({
-  get: keys => {
-    const result: { [key: string]: string } = {}
-
-    for (const key of toKeyList(keys)) {
-      const item = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
-
-      if (item) result[key] = item
+  // Only a missing global is inert. Anything else a caller passes has to fail
+  // on first use instead of swallowing their writes.
+  if (storage === undefined) {
+    return {
+      get: () => ({}),
+      set: () => {},
+      remove: () => {},
+      onChanged: notifier.onChanged,
     }
+  }
 
-    return result
-  },
-  set: items => {
-    const changes: { [key: string]: StorageChange } = {}
+  const route: StorageEventRoute = { storage, fire: notifier.fire }
 
-    for (const [key, value] of Object.entries(items)) {
-      const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
+  // The DOM subscription is shared and reference counted: an adapter joins it
+  // with its first listener and lets go with its last, so factory calls nobody
+  // listens to leave nothing attached to the global object.
+  const onChanged: StorageChangeEvent = {
+    addListener(listener) {
+      notifier.onChanged.addListener(listener)
 
-      if (typeof storage !== 'undefined') {
+      addRoute(route)
+    },
+    removeListener(listener) {
+      notifier.onChanged.removeListener(listener)
+
+      if (!notifier.hasListeners()) removeRoute(route)
+    },
+    hasListener(listener) {
+      return notifier.onChanged.hasListener(listener)
+    },
+  }
+
+  return {
+    get: keys => {
+      const result: { [key: string]: string } = {}
+
+      for (const key of toKeyList(keys)) {
+        const item = storage.getItem(key)
+
+        if (item) result[key] = item
+      }
+
+      return result
+    },
+    set: items => {
+      const changes: { [key: string]: StorageChange } = {}
+
+      for (const [key, value] of Object.entries(items)) {
+        const oldValue = storage.getItem(key)
+
         storage.setItem(key, value)
 
         changes[key] = {
@@ -63,17 +76,15 @@ export default (storage: globalThis.Storage): Storage => ({
           newValue: value,
         }
       }
-    }
 
-    if (Object.keys(changes).length > 0) fireStorageEvent(changes)
-  },
-  remove: keys => {
-    const changes: { [key: string]: StorageChange } = {}
+      if (Object.keys(changes).length > 0) notifier.fire(changes)
+    },
+    remove: keys => {
+      const changes: { [key: string]: StorageChange } = {}
 
-    for (const key of toKeyList(keys)) {
-      const oldValue = typeof storage !== 'undefined' ? storage.getItem(key) : undefined
+      for (const key of toKeyList(keys)) {
+        const oldValue = storage.getItem(key)
 
-      if (typeof storage !== 'undefined') {
         storage.removeItem(key)
 
         changes[key] = {
@@ -81,9 +92,9 @@ export default (storage: globalThis.Storage): Storage => ({
           newValue: null,
         }
       }
-    }
 
-    if (Object.keys(changes).length > 0) fireStorageEvent(changes)
-  },
-  onChanged,
-})
+      if (Object.keys(changes).length > 0) notifier.fire(changes)
+    },
+    onChanged,
+  }
+}

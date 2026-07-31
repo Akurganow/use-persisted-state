@@ -9,7 +9,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // chrome.storage is callback-based, unlike its promise-based firefox counterpart.
 const createStorage = (storage: chrome.storage.StorageArea, area: Area): AsyncStorage => ({
-  get: keys =>
+  // Declared async, like the firefox adapter, so that asking whether this
+  // storage is asynchronous can be answered from the function itself instead of
+  // by calling it — a call here costs a round trip to the extension process.
+  get: async keys =>
     new Promise(resolve => {
       storage.get(keys, items => {
         resolve(toStoredItems(items))

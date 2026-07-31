@@ -44,4 +44,38 @@ describe('create-web-storage', function () {
 
     expect(storage.get(['key2', 'key3'])).toEqual({})
   })
+
+  // Without a storage global the adapter is inert, but it still has to satisfy
+  // the Storage contract: a caller subscribing on the server must not crash.
+  describe('without a storage global', function () {
+    const inertStorage = createWebStorage(undefined)
+
+    test('should add and remove listener', function () {
+      const listener = jest.fn()
+
+      inertStorage.onChanged.addListener(listener)
+
+      expect(inertStorage.onChanged.hasListener(listener)).toBe(true)
+
+      inertStorage.onChanged.removeListener(listener)
+
+      expect(inertStorage.onChanged.hasListener(listener)).toBe(false)
+    })
+
+    test('should discard writes and read back nothing', function () {
+      inertStorage.set({ key1: 'foo' })
+
+      expect(inertStorage.get('key1')).toEqual({})
+
+      inertStorage.remove('key1')
+    })
+  })
+
+  // A missing global is the only inert case. Anything else broken has to fail on
+  // first use, as it did before, rather than quietly drop the caller's data.
+  test('should fail loudly when handed a broken storage', function () {
+    const brokenStorage = createWebStorage(null as unknown as globalThis.Storage)
+
+    expect(() => brokenStorage.get('key1')).toThrow()
+  })
 })

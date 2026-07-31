@@ -208,12 +208,12 @@ const [usePersistedState, clear] = createPersistedState('example', local)
 
 ## Server-side rendering
 
-This library targets browser environments and ships no SSR guards:
+This library targets browser environments. Two things matter when rendering on a server:
 
-- The bundled `local-storage` and `session-storage` adapters access `localStorage` / `sessionStorage` at import time, so importing them in an environment without these globals throws.
+- The bundled `local-storage` and `session-storage` adapters can be imported without `localStorage` / `sessionStorage`. Where the global is missing the adapter reads back nothing and discards every write, so the hook keeps its initial value rather than throwing.
 - The synchronous hook reads from storage during render.
 
-When using an SSR framework (Next.js, Remix, etc.), make sure both the adapter import and the components using the hook run only on the client — for example, in client-only components or behind a dynamic import that is disabled during SSR.
+When using an SSR framework (Next.js, Remix, etc.), make sure the components using the hook run only on the client — for example, in client-only components or behind a dynamic import that is disabled during SSR.
 
 ## How values are stored
 
