@@ -1,8 +1,22 @@
 name: Release
 
-# Manual rather than push-triggered: dependency updates land on main regularly,
-# and a push trigger would cut a release for each of them.
+# Every push to main is a release candidate; the commits decide whether it becomes one. The
+# whatBump in .release-it.js returns no version for a history that earns nothing, so a merge
+# carrying only dependency bumps ends in "No new version to release" and exit 0. That is the
+# property this trigger rests on, and it is measurable: run release-it over a chore-only
+# history and read what it plans. It is stated locally rather than inherited because the
+# preset's default has flipped between its versions — see .agents/rules/project-overview.md.
+#
+# The version bump release-it commits is pushed with GITHUB_TOKEN, and pushes made with that
+# token do not start another workflow run, so this cannot feed itself.
 on:
+  push:
+    branches:
+      - main
+  # Kept beside the automatic trigger for what a push cannot express: forcing an increment the
+  # history understates, and rehearsing the pipeline with --dry-run. It is also the only way to
+  # retry a release whose commits already sit on main, after an outage at npm or GitHub, without
+  # inventing an empty commit to push.
   workflow_dispatch:
     inputs:
       increment:
@@ -21,6 +35,14 @@ on:
         type: boolean
         default: false
 
+# One release at a time, across the whole repository. Two runs started close together
+# would otherwise derive their versions from the same history and race to tag and
+# publish. Queueing is right and cancelling is not: a run interrupted between the npm
+# publish and the tag push leaves a version on the registry that no commit points at.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 permissions:
   # Needed to commit the version bump, push the tag and create the release.
   contents: write
@@ -30,8 +52,16 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # The npm trusted publisher for this package names `npm` as its environment, and the OIDC
+    # token carries the environment claim only when the job opts into one. Without this line
+    # the claim is absent and npm rejects the publish.
+    environment: npm
     timeout-minutes: 30
     steps:
+      # Known gap, pending a decision: pushing the version bump to main needs an actor that can
+      # bypass the branch rules, and github-actions[bot] cannot be granted that. A custom GitHub
+      # App is the usual remedy and none exists yet, so this still runs as the default
+      # GITHUB_TOKEN.
       - uses: actions/checkout@v7
         with:
           # @release-it/conventional-changelog derives the version from history.
@@ -60,6 +90,16 @@ jobs:
           DRY_RUN: ${{ inputs.dry-run }}
         run: |
           args=()
-          [ "$INCREMENT" != 'auto' ] && args+=("$INCREMENT")
-          [ "$DRY_RUN" = 'true' ] && args+=('--dry-run')
+
+          # Both inputs are empty on any event other than workflow_dispatch. Testing
+          # against 'auto' alone would hand release-it an empty positional argument,
+          # which is why the emptiness is checked first.
+          if [ -n "$INCREMENT" ] && [ "$INCREMENT" != 'auto' ]; then
+            args+=("$INCREMENT")
+          fi
+
+          if [ "$DRY_RUN" = 'true' ]; then
+            args+=('--dry-run')
+          fi
+
           npx release-it "${args[@]}" --ci

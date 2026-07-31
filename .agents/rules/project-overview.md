@@ -42,6 +42,33 @@ wrapper declarations, `publint` and `attw`; see [packaging](../../docs/packaging
 Public API changes follow semver. A behaviour change that users can observe — what the hook returns,
 when it re-renders, what lands in storage — is breaking even when the type signature is untouched.
 
+Releases are cut automatically from every push to `main`, so merging a pull request is what publishes.
+The version comes from the commit messages alone: only `feat`, `fix`, `perf` and a declared breaking
+change earn one, and a push carrying nothing else ends in "No new version to release" and a green run,
+so dependency updates cost a no-op rather than a version.
+
+That policy is stated by the `whatBump` in `.release-it.js` rather than inherited from the preset,
+because the preset's own answer has already flipped once under this repository. In
+`conventional-changelog-conventionalcommits@8` it opened with `level = 2` — a patch floor, which
+resolved even a history with no commits at all to a patch, and under a push trigger would have
+published a version for every dependency bump. In `10.2.1`, which is what the lock resolves now, it
+opens with `level = null` and returns no release instead. A push trigger is only safe under the
+second, and which of the two applies is decided by a transitive dependency. Stating the policy here
+takes that decision back.
+
+Measured with `release-it --dry-run --ci` over synthetic histories, both with the local `whatBump`
+and with it removed: nothing, chore-only, and `chore + docs + ci + refactor + test + build` release
+nothing; `chore + fix` gives a patch, `chore + fix + feat` a minor, `perf` alone a patch, and a
+`BREAKING CHANGE` footer a major whichever type carries it. On the current lock the two agree
+everywhere except `revert:`, which the preset counts as a patch and the local policy does not.
+Re-measure that ladder before changing `whatBump`, and before accepting an upgrade to
+`@release-it/conventional-changelog` or to the preset beneath it — the bump ladder decides what gets
+published, and it is not owned by this repository alone.
+
+The whole release-it configuration lives in `.release-it.js` rather than in `package.json`, because
+`whatBump` is a function. release-it merges both sources, so a configuration split across them would
+exist twice.
+
 ### Upgrades known to be blocked
 
 - **TypeScript must not go to 7.** TypeScript 7 ships the Go compiler and exposes no stable

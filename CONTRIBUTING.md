@@ -88,10 +88,10 @@ installs the package.**
 
 | Type | Effect on the release |
 | --- | --- |
-| `fix:` | patch |
+| `fix:`, `perf:` | patch |
 | `feat:` | minor |
 | `BREAKING CHANGE:` in the body/footer | major |
-| `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
+| `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:`, `revert:` | no release |
 
 Use the body to explain **why** the change was made. The diff already shows what changed.
 
@@ -114,9 +114,20 @@ Use the body to explain **why** the change was made. The diff already shows what
 
 ## Releases
 
-Releases are cut manually by maintainers via the GitHub Actions **Release** workflow, which runs
-`release-it`: the version and changelog are derived from the conventional commit history, and the
-package is published to npm. Contributors never need to publish anything.
+Releases are cut automatically. Every push to `main` runs the GitHub Actions **Release** workflow,
+which runs `release-it`: the version and changelog are derived from the conventional commit history,
+and the package is published to npm. Merging a pull request is therefore what publishes it, which is
+why the table above matters. Contributors never need to publish anything.
+
+A push whose commits earn no version — dependency bumps, documentation, CI — finishes green having
+done nothing, and its log reads `No new version to release`. The line above it renders a changelog
+heading containing `null`, as in `## [null](compare/v1.0.0...vnull)`. That is the changelog plugin
+formatting a heading before the run decides there is no version; nothing is written and nothing is
+published. It is noise in the log, not a symptom.
+
+The workflow can also be started by hand from the Actions tab, which is how you force an increment
+the commit history understates, rehearse the whole thing with `--dry-run`, or retry a release whose
+commits are already on `main` after an outage.
 
 ## Reporting bugs and security issues
 
