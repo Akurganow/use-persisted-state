@@ -12,7 +12,12 @@ export default function getPersistedValue<T>(key: string, initialValue: T | (() 
 
   try {
     initialPersist = persist ? JSON.parse(persist) : {}
-  } catch {
+  } catch (err) {
+    // A shared backend can hold a foreign or truncated entry, so a parse failure is expected here
+    // and must not stop the component mounting. It is reported rather than swallowed because the
+    // fallback discards whatever was persisted, and because the change path logs the same failure.
+    console.error("use-persisted-state: Can't parse value from storage", err)
+
     initialPersist = {}
   }
 

@@ -116,8 +116,18 @@ const myStorage = {
 }
 ```
 
-TypeScript users can import the contract types directly:
+TypeScript users can import the contract types from the entry point:
 
 ```ts
-import type { Storage, AsyncStorage } from '@plq/use-persisted-state/lib/@types/storage'
+import type {
+  AsyncStorage,
+  Storage,
+  StorageChange,
+  StorageChangeEvent,
+  StorageChangeListener,
+} from '@plq/use-persisted-state'
 ```
+
+The longer `@plq/use-persisted-state/lib/@types/storage` path that earlier versions documented
+continues to work and resolves to the same types. Prefer the entry point: `lib/` is kept open for
+compatibility only, and is the one path `check:attw` does not verify.

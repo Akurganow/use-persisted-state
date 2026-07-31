@@ -89,11 +89,15 @@ Removes the factory's whole storage entry. Hooks created by that factory fall ba
 
 ### TypeScript
 
-The package ships its own type definitions. When writing a custom backend, the storage contract types can be imported directly:
+The package ships its own type definitions. The storage contract and the hook's own types are exported from the entry point:
 
 ```ts
-import type { Storage, AsyncStorage } from '@plq/use-persisted-state/lib/@types/storage'
+import type { Storage, AsyncStorage, StorageChange, StorageChangeListener } from '@plq/use-persisted-state'
 ```
+
+`Storage` and `AsyncStorage` are the two backend contracts. `StorageChange`, `StorageChangeListener` and `StorageChangeEvent` describe the `onChanged` event an adapter provides. `PersistedState` and `UsePersistedState` type the hook and the tuple it returns.
+
+The longer `@plq/use-persisted-state/lib/@types/storage` path that earlier versions documented continues to work and resolves to the same types. Prefer the entry point: `lib/` is kept open for compatibility only.
 
 ## Clear storage
 
