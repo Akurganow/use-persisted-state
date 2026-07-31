@@ -51,3 +51,6 @@ node_modules/
 .vscode
 */**/.DS_Store
 */**/.output.txt
+
+# Isolated worktrees used by coding agents
+.claude/worktrees/

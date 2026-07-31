@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "lib": [
       "DOM",
       "ESNext"
     ],
-    "module": "commonjs",
+    "module": "nodenext",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
+    "types": ["chrome", "firefox-webext-browser"],
+    "isolatedModules": true,
     "preserveConstEnums": true,
     "removeComments": false,
     "skipLibCheck": true,
