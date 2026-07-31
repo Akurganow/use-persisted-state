@@ -63,7 +63,7 @@ const [usePersistedState, clear] = createPersistedState(name, storage)
 - `name` — a namespace for this factory. All keys created by the returned hook are stored together in a single storage entry named `persisted_state_hook:<name>`.
 - `storage` — a synchronous or asynchronous storage backend implementing the [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md).
 
-Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous from the shape of its methods wherever it can — a `get` declared `async` settles the question without a call. Only when neither holds does it call `get('')` once to see whether the result is a `Promise`; `set` and `remove` are never invoked, so detection cannot write to your storage. If even a read during setup is undesirable, import one of the named factories below instead — they skip detection entirely.
+Returns a `[usePersistedState, clear]` tuple. The default export detects whether the backend is asynchronous from the shape of its methods wherever it can — a `get` declared `async` settles the question without a call. Only when that does not hold does it call `get('')` once, as a method of your storage, to see whether the result is a `Promise`; `set` and `remove` are never invoked, so detection cannot write to your storage. All three members must be functions. If even a read during setup is undesirable, import one of the named factories below instead — they skip detection entirely.
 
 ### Named factories
 
