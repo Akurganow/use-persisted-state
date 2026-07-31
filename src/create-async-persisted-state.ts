@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
@@ -22,30 +22,82 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
   const usePersistedState = <T>(key: string, initialValue: T | (() => T)): UsePersistedState<T> => {
     const [state, setState] = useState<T>(initialValue)
 
-    const setPersistedState = async (newState: React.SetStateAction<T>): Promise<void> => {
-      const newValue = getNewValue<T>(newState, state)
+    // The setter must resolve updater functions against the last value applied,
+    // not against the one captured by the render that created it. Reading the
+    // render closure collapses updates batched into a single event.
+    const latestValue = useRef(state)
 
-      setState(newValue)
+    // Whether anything has already put a value in place. A load that settles after
+    // the caller set one must not revert it, and no signal local to the load can
+    // answer this: the write it loses to happens outside the load entirely.
+    const hasAppliedValue = useRef(false)
 
-      const persistedItem = await storage.get(safeStorageKey)
-      const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
+    const applyValue = useCallback((value: T): void => {
+      latestValue.current = value
+      hasAppliedValue.current = true
 
-      await storage.set({ [safeStorageKey]: newItem })
-    }
+      setState(value)
+    }, [])
+
+    // The exact entry this hook last wrote and has not yet seen reported back.
+    const pendingOwnWrite = useRef<string | null>(null)
+
+    const setPersistedState = useCallback(
+      async (newState: React.SetStateAction<T>): Promise<void> => {
+        const newValue = getNewValue<T>(newState, latestValue.current)
+
+        applyValue(newValue)
+
+        const persistedItem = await storage.get(safeStorageKey)
+        const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
+
+        // Recorded before the write, because the backend may report it before the
+        // promise settles.
+        pendingOwnWrite.current = newItem
+
+        await storage.set({ [safeStorageKey]: newItem })
+      },
+      [key, applyValue],
+    )
+
+    // As in `useState`, the value the load falls back to is the one given on the
+    // first render. Later identities of an inline object must not reload, or the
+    // effect re-runs on every render and never settles.
+    const mountInitialValue = useRef(initialValue)
+
+    // Subscribed before the load below, and the order is load-bearing: React runs
+    // effects in declaration order, so reading first would leave an interval
+    // between the read and the subscription in which a write belongs to neither
+    // and is lost. Reading last covers everything written before the subscription
+    // began, and the listener covers everything after.
+    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrite)
 
     useEffect(() => {
-      const setInitialValue = async () => {
-        const persist = await storage.get(safeStorageKey)
-        const persistedState = persist[safeStorageKey]
-        const initialOrPersistedValue = getPersistedValue<T>(key, initialValue, persistedState)
+      // Two separate questions, and one cell cannot hold both: whether this load
+      // is still the current one, which only the closure it belongs to can answer,
+      // and whether a value has been applied meanwhile, which outlives it. A load
+      // abandoned by a key change would otherwise read the flag its successor had
+      // just set, apply the previous key's value and shut the successor out. The
+      // second question is also what makes subscribing first safe: a value the
+      // listener delivers while the load is in flight is not overwritten by it.
+      let isCancelled = false
 
-        setState(initialOrPersistedValue)
+      hasAppliedValue.current = false
+
+      const loadPersistedValue = async (): Promise<void> => {
+        const persist = await storage.get(safeStorageKey)
+
+        if (isCancelled || hasAppliedValue.current) return
+
+        applyValue(getPersistedValue<T>(key, mountInitialValue.current, persist[safeStorageKey]))
       }
 
-      setInitialValue()
-    }, [initialValue, key])
+      loadPersistedValue()
 
-    useStorageHandler<T>(key, safeStorageKey, setState, storage, initialValue)
+      return () => {
+        isCancelled = true
+      }
+    }, [key, applyValue])
 
     return [state, setPersistedState]
   }
