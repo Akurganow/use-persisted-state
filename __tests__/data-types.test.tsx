@@ -132,8 +132,9 @@ describe('Data Types Persistence', () => {
         result.current[1](null)
       })
 
-      // null не сохраняется, остается initial value
-      expect(result.current[0]).toBe('initial')
+      // null is a value the user set, not an absence: it must not be
+      // replaced by the initial value on read-back.
+      expect(result.current[0]).toBeNull()
     })
 
     test('should read back null set via the setter', () => {
@@ -143,10 +144,25 @@ describe('Data Types Persistence', () => {
         result.current[1](null)
       })
 
-      // The setter DOES write null into storage; the value is lost on read-back,
-      // where a nullish persisted value falls back to the initial value.
+      // The full round trip: the setter writes null into storage and the
+      // read path must return it instead of falling back to the initial value.
       expect(localStorage.__STORE__['persisted_state_hook:dataTypes']).toBe(JSON.stringify({ nullRoundTripKey: null }))
       expect(result.current[0]).toBeNull()
+    })
+
+    test('should read back null from a freshly mounted hook', () => {
+      const { result: writer } = renderHook(() => usePersistedState<string | null>('nullRemountKey', 'initial'))
+
+      act(() => {
+        writer.current[1](null)
+      })
+
+      const { result: reader } = renderHook(() => usePersistedState<string | null>('nullRemountKey', 'initial'))
+
+      // The half of the round trip a page reload exercises. Staying green in the same hook
+      // instance proves only that the value survived in memory; a hook that never saw the
+      // write has to reach the same null, or the initial value silently resurrects.
+      expect(reader.current[0]).toBeNull()
     })
   })
 
@@ -158,8 +174,10 @@ describe('Data Types Persistence', () => {
         result.current[1](undefined)
       })
 
-      // undefined не сериализуется в JSON, поэтому остается initial value
-      expect(result.current[0]).toBe('initial')
+      // useState parity: JSON cannot persist undefined, but the in-memory
+      // value the setter was given must stay undefined instead of snapping
+      // back to the initial value.
+      expect(result.current[0]).toBeUndefined()
     })
 
     test('should handle undefined initial value', () => {
@@ -243,8 +261,14 @@ describe('Data Types Persistence', () => {
         result.current[1](NaN)
       })
 
-      // NaN не сериализуется корректно в JSON, остается initial value
-      expect(result.current[0]).toBe(0)
+      // Parity with useState within the session: the value handed to the setter is the value the
+      // component keeps. It does not outlive a reload — JSON has no NaN, `JSON.stringify` writes
+      // null, and nothing here promises otherwise; the case below pins what a later reader sees
+      // instead. The accepted cost is that until something remounts, another component on this
+      // key reads the stored null while this one still holds NaN — deliberate, not an oversight,
+      // and the alternative was a second copy of the re-sync the hook deleted. The Infinity cases
+      // follow the same rule.
+      expect(result.current[0]).toBeNaN()
     })
 
     test('should handle Infinity values', () => {
@@ -254,8 +278,7 @@ describe('Data Types Persistence', () => {
         result.current[1](Infinity)
       })
 
-      // Infinity не сериализуется корректно в JSON, остается initial value
-      expect(result.current[0]).toBe(0)
+      expect(result.current[0]).toBe(Infinity)
     })
 
     test('should handle -Infinity values', () => {
@@ -265,28 +288,39 @@ describe('Data Types Persistence', () => {
         result.current[1](-Infinity)
       })
 
-      // -Infinity не сериализуется корректно в JSON, остается initial value
-      expect(result.current[0]).toBe(0)
+      expect(result.current[0]).toBe(-Infinity)
+    })
+
+    test('should read back a NaN written by an earlier instance as null', () => {
+      const { result: writer } = renderHook(() => usePersistedState<number | null>('nanAcrossInstancesKey', 0))
+
+      act(() => {
+        writer.current[1](NaN)
+      })
+
+      const { result: reader } = renderHook(() => usePersistedState<number | null>('nanAcrossInstancesKey', 0))
+
+      // The other side of the same limit: null is what JSON left in storage, so null is
+      // what a later reader must see. Falling back to the initial value here would hide
+      // the write and resurrect a value the user replaced.
+      expect(reader.current[0]).toBeNull()
     })
   })
 
   describe('State persistence across hook instances', () => {
     test('should maintain state between different hook instances', () => {
-      // Первый экземпляр хука
       const { result: result1 } = renderHook(() => usePersistedState<any>('persistenceKey', 'initial'))
 
       act(() => {
         result1.current[1]({ test: 'value', number: 123 })
       })
 
-      // Второй экземпляр хука с тем же ключом
       const { result: result2 } = renderHook(() => usePersistedState<any>('persistenceKey', 'initial'))
 
       expect(result2.current[0]).toEqual({ test: 'value', number: 123 })
     })
 
     test('should handle type changes in persisted state', () => {
-      // Сначала сохраняем строку
       const { result: result1 } = renderHook(() => usePersistedState<any>('typeChangeKey', 'initial'))
 
       act(() => {
@@ -295,14 +329,12 @@ describe('Data Types Persistence', () => {
 
       expect(result1.current[0]).toBe('string value')
 
-      // Затем меняем на число
       act(() => {
         result1.current[1](42)
       })
 
       expect(result1.current[0]).toBe(42)
 
-      // Затем меняем на объект
       act(() => {
         result1.current[1]({ changed: true })
       })
