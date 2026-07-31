@@ -49,4 +49,18 @@ describe('is-async-storage', () => {
     expect(isAsyncStorage(undefined)).toBe(false)
     expect(isAsyncStorage({ getItem: true })).toBe(false)
   })
+
+  test('should not call storage methods while inspecting', function () {
+    const get = jest.fn(() => 'value')
+    const set = jest.fn()
+    const remove = jest.fn()
+
+    isAsyncStorage({ get, set, remove })
+
+    // A predicate must be side-effect free: asking "is this storage async?"
+    // must not read from, write to or delete from the inspected storage.
+    expect(get).not.toHaveBeenCalled()
+    expect(set).not.toHaveBeenCalled()
+    expect(remove).not.toHaveBeenCalled()
+  })
 })
