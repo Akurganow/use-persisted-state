@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.4.0](https://github.com/Akurganow/use-persisted-state/compare/v1.3.0...v1.4.0) (2026-07-31)
+
+### Features
+
+* export the storage contract types from the entry point ([608bfaa](https://github.com/Akurganow/use-persisted-state/commit/608bfaaac780d4ddcee78eec51bb1a5bccef1396))
+* publish an exports map with ESM wrappers and node10 stubs ([8ed128e](https://github.com/Akurganow/use-persisted-state/commit/8ed128e78c1f2b831496e159a6e6d626817bbed7))
+
+### Bug Fixes
+
+* **chrome-storage:** narrow storage values at the adapter boundary ([fc0ca97](https://github.com/Akurganow/use-persisted-state/commit/fc0ca973be770714f876bbd68934242e035eaea1))
+* correct the author name and funding links ([f85a29f](https://github.com/Akurganow/use-persisted-state/commit/f85a29f615a55311407b483fe1ae00c7aa12cc6a))
+* drop the storage-read state nothing branches on ([3084f5e](https://github.com/Akurganow/use-persisted-state/commit/3084f5e4d19af872a1827c84472eea1ddaf42755))
+* handle a rejected read on the asynchronous mount path ([4203ac2](https://github.com/Akurganow/use-persisted-state/commit/4203ac205ceff90d2ca3c6bee4939aae55a5d065))
+* isolate web storage adapter listeners and make imports SSR-safe ([6710aef](https://github.com/Akurganow/use-persisted-state/commit/6710aefee8a45689497ae4415a74ffa1ada1361e))
+* keep an empty string a stored value in the web storage adapter ([94932d9](https://github.com/Akurganow/use-persisted-state/commit/94932d9a13e19451ea616632e5cee82f6c358383))
+* point the author contact at a live address ([6ec8f96](https://github.com/Akurganow/use-persisted-state/commit/6ec8f96f5f84a64d832780d2e8955bb875f8703c))
+* probe a storage's get as a method of that storage ([ebf48a2](https://github.com/Akurganow/use-persisted-state/commit/ebf48a282d0a2709740216f196c908c1aa383179))
+* read a foreign entry that is not a keyed object without throwing ([a5ede4f](https://github.com/Akurganow/use-persisted-state/commit/a5ede4f59b84050cd91fbf46b3c79edc51eb9d40))
+* require a storage's members to be callable to call it asynchronous ([7349787](https://github.com/Akurganow/use-persisted-state/commit/73497875f0d6978ddc3f7472c74f293a63adec26))
+* restore the initial value the hook has now when an entry is removed ([48b5cc0](https://github.com/Akurganow/use-persisted-state/commit/48b5cc07156f22927e7e1ab5ebc04e57ed3d10fa))
+* return a persisted null and stop isAsyncStorage writing to storage ([bdd9ec0](https://github.com/Akurganow/use-persisted-state/commit/bdd9ec07ce53624128edfa7657f5486e4d592a8d))
+* stop the hook overwriting its own state and reading storage on every render ([256f06d](https://github.com/Akurganow/use-persisted-state/commit/256f06dce7dace4ebc6698795a79846baeeb0343))
+* **storages:** ignore storage areas the library does not track ([c4b3c9f](https://github.com/Akurganow/use-persisted-state/commit/c4b3c9f3222ad47c01f2885a6e5bdbf19c81bfb0)), references [#938](https://github.com/Akurganow/use-persisted-state/issues/938)
+
 ## [1.3.0](https://github.com/Akurganow/use-persisted-state/compare/v1.2.0...v1.3.0) (2025-08-02)
 
 ### Features
