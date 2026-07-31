@@ -38,6 +38,16 @@ on:
           - minor
           - major
         default: auto
+      # A run that died after the tag was pushed cannot be finished by starting an ordinary one:
+      # the tag is the newest, no commits follow it, and the release ends in "No new version to
+      # release" having done nothing. This targets the version already tagged instead of deriving
+      # a new one, so the publish and the GitHub release get a second attempt. It has to run here
+      # rather than from a laptop, because OIDC publishing only exists inside a workflow.
+      retry-current:
+        description: 'Finish the release for the version already tagged, instead of deriving a new one.'
+        required: false
+        type: boolean
+        default: false
       dry-run:
         description: 'Run the whole release without publishing or pushing anything.'
         required: false
@@ -99,14 +109,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INCREMENT: ${{ inputs.increment }}
+          RETRY_CURRENT: ${{ inputs.retry-current }}
           DRY_RUN: ${{ inputs.dry-run }}
         run: |
           args=()
 
-          # Both inputs are empty on any event other than workflow_dispatch. Testing
-          # against 'auto' alone would hand release-it an empty positional argument,
-          # which is why the emptiness is checked first.
-          if [ -n "$INCREMENT" ] && [ "$INCREMENT" != 'auto' ]; then
+          # Retrying targets the version already tagged, so an increment would contradict it.
+          # The inputs are all empty on any event other than workflow_dispatch, and testing
+          # against 'auto' alone would hand release-it an empty positional argument, which is
+          # why the emptiness is checked first.
+          if [ "$RETRY_CURRENT" = 'true' ]; then
+            args+=('--no-increment')
+          elif [ -n "$INCREMENT" ] && [ "$INCREMENT" != 'auto' ]; then
             args+=("$INCREMENT")
           fi
 

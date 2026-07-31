@@ -63,7 +63,11 @@ module.exports = {
     // `after:git:release`, which release-it skips whenever the git plugin's push step returns no
     // output. The one coupling to know about: this fires because the github plugin is enabled, so
     // turning `github.release` off below would silently take the publish with it.
-    'before:github:release': 'npm publish',
+    //
+    // It goes through a script rather than calling `npm publish` directly so that re-running a
+    // release whose publish already succeeded skips it instead of dying on it — see
+    // scripts/publish-release.mjs.
+    'before:github:release': 'node scripts/publish-release.mjs',
 
     // The placeholders below are release-it's own and have to survive as literal text. Making it
     // a JS template literal would resolve them when this file loads, where none of them exist.

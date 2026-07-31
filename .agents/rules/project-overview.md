@@ -60,12 +60,24 @@ Three things about that loop are load-bearing and break silently if they are "ti
   never be replaced, so publishing before a push that then fails strands a version nobody can reuse
   and wedges every later run on `EPUBLISHCONFLICT`, while a tag that was pushed without a publish
   is just deleted and retried.
+- **The publish step is idempotent, and only a 404 counts as "not published".**
+  `scripts/publish-release.mjs` skips the publish when that exact version is already on the
+  registry, which is what lets a failed run be retried. Any other lookup failure — an unreachable
+  registry first among them — fails the release rather than skipping, because a skip would report
+  a green release for a package that never shipped.
 - **The release commit carries `[skip ci]`.** It is pushed with a deploy key, not `GITHUB_TOKEN`,
   and a deploy key push *does* start workflows, so without the marker the release commit would
   trigger the release that produced it. The deploy key exists because the branch ruleset can grant
   a bypass to that actor and cannot grant one to the built-in `github-actions[bot]`.
 - **The workflow file must stay `.github/workflows/release.yml`.** The npm trusted publisher is
   bound to that filename; renaming the file stops OIDC publishing.
+
+When a release dies part-way — the tag is pushed but the GitHub release is missing, say — starting
+an ordinary run does not finish it: the tag is already the newest, no commits follow it, and the
+run ends in "No new version to release" having done nothing. Recover by starting **Release** from
+the Actions tab with **retry-current** ticked, which targets the tagged version instead of deriving
+a new one. It has to run there rather than locally, because OIDC publishing only exists inside a
+workflow. Whatever already succeeded is skipped, so the retry is safe to repeat.
 
 That policy is stated by the `whatBump` in `.release-it.js` rather than inherited from the preset,
 because the preset's own answer has already flipped once under this repository. In
