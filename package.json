@@ -61,7 +61,7 @@
     "persist",
     "sync"
   ],
-  "author": "Alex Kurganov <me@akurganow.ru>",
+  "author": "Alex Kurganov <a.kurganow@gmail.com>",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
