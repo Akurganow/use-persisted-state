@@ -20,6 +20,14 @@ describe('hook defined correctly', () => {
     expect(clear).toBeDefined()
     expect(result.current).toBeDefined()
     expect(localStorage.setItem).not.toHaveBeenCalled()
+
+    act(() => {
+      result.current[1]('baz')
+    })
+
+    // Keeps the negative assertion above honest: a dead write path would satisfy
+    // it exactly as well as rendering-writes-nothing does.
+    expect(localStorage.setItem).toHaveBeenCalledTimes(1)
   })
 
   test('localstorage called correctly', () => {
