@@ -32,12 +32,12 @@ function applyRemoval<T>(
   change: StorageChange,
   itemKey: string,
   applyValue: (value: T) => void,
-  mountInitialValue: React.RefObject<T | (() => T)>,
+  latestInitialValue: React.RefObject<T | (() => T)>,
 ): void {
   if (change.oldValue === null || change.oldValue === undefined) return
 
   const oldValue = readStoredValue<T>(itemKey, change.oldValue)
-  const declaredInitialValue = mountInitialValue.current
+  const declaredInitialValue = latestInitialValue.current
   // Compared against the resolved value: a factory is never equal to what it
   // produces, so comparing the declaration re-applies the initial value on every
   // removal.
@@ -83,7 +83,7 @@ function createStorageHandler<T>(
   itemKey: string,
   storageKey: string,
   applyValue: (value: T) => void,
-  mountInitialValue: React.RefObject<T | (() => T)>,
+  latestInitialValue: React.RefObject<T | (() => T)>,
   pendingOwnWrite: React.RefObject<string | null>,
 ) {
   return (changes: { [key: string]: StorageChange }): void => {
@@ -93,7 +93,7 @@ function createStorageHandler<T>(
       if (consumeOwnWriteEcho(change, pendingOwnWrite)) continue
 
       if (change.newValue === null || change.newValue === undefined) {
-        applyRemoval<T>(change, itemKey, applyValue, mountInitialValue)
+        applyRemoval<T>(change, itemKey, applyValue, latestInitialValue)
         continue
       }
 
@@ -112,14 +112,18 @@ export default function useStorageHandler<T>(
   initialValue: T | (() => T),
   pendingOwnWrite: React.RefObject<string | null>,
 ): void {
-  // As in `useState`, the value restored when the entry is removed is the one
-  // given on the first render, matching what the hook itself falls back to.
-  // Freezing it also keeps an inline object or factory, whose identity changes
-  // every render, from tearing the subscription down and rebuilding it.
-  const mountInitialValue = useRef(initialValue)
+  // A removal restores the initial value the hook holds now, the same one the
+  // key-change path reads, so a caller whose default travels with its data gets
+  // that record's default back rather than the mounted one. Tracked through a ref
+  // rather than a dependency because an inline object or factory has a new
+  // identity every render, which would tear the subscription down and rebuild it;
+  // written during render, as the key the hook is rendering for is.
+  const latestInitialValue = useRef(initialValue)
+
+  latestInitialValue.current = initialValue
 
   useEffect(() => {
-    const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, mountInitialValue, pendingOwnWrite)
+    const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, latestInitialValue, pendingOwnWrite)
 
     storage.onChanged.addListener(handleStorage)
 

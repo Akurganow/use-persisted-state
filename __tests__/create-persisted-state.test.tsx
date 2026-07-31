@@ -151,6 +151,38 @@ describe('changing key', () => {
   })
 })
 
+describe('clearing', () => {
+  const [usePersistedState, clear] = createPersistedState('drafts', storage)
+
+  beforeEach(() => {
+    cleanup()
+    localStorage.clear()
+  })
+
+  test('restores the initialValue the hook has now, not the one it mounted with', () => {
+    const { result, rerender } = renderHook(({ initialValue }) => usePersistedState('draft', initialValue), {
+      initialProps: { initialValue: 'first' },
+    })
+
+    act(() => {
+      result.current[1]('edited')
+    })
+
+    rerender({ initialValue: 'second' })
+
+    act(() => {
+      clear()
+    })
+
+    // A caller whose default travels with its data — `usePersistedState('draft',
+    // props.defaultDraft)` — gets the default of the record it is showing. The
+    // key-change path already reads the live initialValue, so a removal reading
+    // the mount-time one makes one hook answer "what is my initial value?" two
+    // different ways depending on which path asked.
+    expect(result.current[0]).toBe('second')
+  })
+})
+
 describe('own writes', () => {
   const entryKey = 'persisted_state_hook:echo'
   const [usePersistedState] = createPersistedState('echo', storage)

@@ -55,7 +55,7 @@ describe('use-storage-handler', () => {
     expect(removeListener).not.toHaveBeenCalled()
   })
 
-  test('restores the initialValue of the first render when the entry is removed', () => {
+  test('restores the initialValue of the latest render when the entry is removed', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
     const pendingOwnWrite = createOwnWriteRecord()
@@ -72,10 +72,10 @@ describe('use-storage-handler', () => {
       fire({ [storageKey]: { oldValue: JSON.stringify({ [itemKey]: 'stored' }), newValue: null } })
     })
 
-    // The hook's own fallback is fixed at mount, as useState's is. A removal has
-    // to reach the same value, or one hook answers "what is the initial value?"
-    // two different ways depending on which path asked.
-    expect(applyValue).toHaveBeenCalledWith('first')
+    // The key-change path reads the initialValue of the render it happens on, so
+    // a removal has to read the same one, or one hook answers "what is the
+    // initial value?" two different ways depending on which path asked.
+    expect(applyValue).toHaveBeenCalledWith('second')
   })
 
   test('does not restore a function initialValue the removed entry already held', () => {
