@@ -1,0 +1,110 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["src/**", "__tests__/**", "demo/src/**", "*.mjs", "*.js"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all",
+      "arrowParentheses": "asNeeded",
+      "quoteProperties": "asNeeded",
+      "bracketSpacing": true
+    },
+    "globals": ["chrome", "browser"],
+    "jsxRuntime": "reactClassic"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 15
+          }
+        },
+        "noForEach": "error",
+        "noImplicitCoercions": "error",
+        "noUselessUndefined": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useHookAtTopLevel": "error"
+      },
+      "style": {
+        "noExportedImports": "error",
+        "noNestedTernary": "error",
+        "noNonNullAssertion": "error",
+        "noParameterAssign": "error",
+        "useConsistentArrayType": "error",
+        "useGlobalThis": "error",
+        "useImportType": "error"
+      },
+      "suspicious": {
+        "noEvolvingTypes": "error",
+        "noExplicitAny": "error",
+        "noShadow": "error"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["__tests__/**"],
+      "javascript": {
+        "globals": ["jest", "describe", "it", "test", "expect", "beforeEach", "afterEach", "beforeAll", "afterAll"]
+      },
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useArrowFunction": "off"
+          },
+          "style": {
+            "noMagicNumbers": "off"
+          },
+          "suspicious": {
+            "noApproximativeNumericConstant": "off",
+            "noExplicitAny": "off",
+            "noTsIgnore": "off"
+          },
+          "performance": {
+            "noDynamicNamespaceImportAccess": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["demo/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noJsxLiterals": "off"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,12 +1,13 @@
-import React, {useEffect, useState} from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 
 import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
 
-import {AsyncStorage} from './@types/storage'
-import {PersistedState, UsePersistedState} from './@types/hook'
+import type { AsyncStorage } from './@types/storage'
+import type { PersistedState, UsePersistedState } from './@types/hook'
 
 export default function createAsyncPersistedState<S extends AsyncStorage>(
   storageKey: string,
@@ -29,7 +30,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       const persistedItem = await storage.get(safeStorageKey)
       const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
 
-      await storage.set({[safeStorageKey]: newItem})
+      await storage.set({ [safeStorageKey]: newItem })
     }
 
     useEffect(() => {

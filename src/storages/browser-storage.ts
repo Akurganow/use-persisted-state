@@ -1,5 +1,5 @@
-import { AsyncStorage } from '../@types/storage'
-import { Area, createListenerRegistry, toStorageChanges, toStoredItems } from '../utils/extension-storage'
+import type { AsyncStorage } from '../@types/storage'
+import { type Area, createListenerRegistry, toStorageChanges, toStoredItems } from '../utils/extension-storage'
 
 const registry = createListenerRegistry()
 
@@ -19,8 +19,4 @@ const local = createStorage(browser.storage.local, 'local')
 const sync = createStorage(browser.storage.sync, 'sync')
 const managed = createStorage(browser.storage.managed, 'managed')
 
-export {
-  local,
-  sync,
-  managed,
-}
+export { local, sync, managed }

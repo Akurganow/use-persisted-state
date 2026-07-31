@@ -1,10 +1,10 @@
-import { default as createSyncPersistedState } from './create-persisted-state'
+import createSyncPersistedState from './create-persisted-state'
 import createAsyncPersistedState from './create-async-persisted-state'
 
 import isAsyncStorage from './utils/is-async-storage'
 
-import { Storage, AsyncStorage } from './@types/storage'
-import { PersistedState } from './@types/hook'
+import type { Storage, AsyncStorage } from './@types/storage'
+import type { PersistedState } from './@types/hook'
 
 export default function createPersistedState<S extends Storage | AsyncStorage>(
   name: string,
@@ -17,7 +17,5 @@ export default function createPersistedState<S extends Storage | AsyncStorage>(
   return createSyncPersistedState(name, storage as Storage)
 }
 
-export {
-  createSyncPersistedState as createPersistedState,
-  createAsyncPersistedState,
-}
+export { default as createPersistedState } from './create-persisted-state'
+export { default as createAsyncPersistedState } from './create-async-persisted-state'

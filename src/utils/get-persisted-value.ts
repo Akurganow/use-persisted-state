@@ -1,6 +1,6 @@
 import { isFunction } from '@plq/is'
 
-export default function<T>(key:string, initialValue: T | (() => T), persist?: string): T {
+export default function <T>(key: string, initialValue: T | (() => T), persist?: string): T {
   let initialPersist: { [x: string]: unknown }
 
   try {
@@ -9,7 +9,7 @@ export default function<T>(key:string, initialValue: T | (() => T), persist?: st
     initialPersist = {}
   }
 
-  let initialOrPersistedValue = isFunction(initialValue) ? initialValue()  : initialValue
+  let initialOrPersistedValue = isFunction(initialValue) ? initialValue() : initialValue
 
   if (initialPersist && key in initialPersist) {
     initialOrPersistedValue = (initialPersist[key] as T) ?? initialOrPersistedValue

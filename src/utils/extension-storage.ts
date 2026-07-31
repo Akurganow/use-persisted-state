@@ -1,4 +1,4 @@
-import { StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
+import type { StorageChange, StorageChangeEvent, StorageChangeListener } from '../@types/storage'
 
 const TRACKED_AREAS = ['local', 'sync', 'managed'] as const
 
@@ -17,22 +17,22 @@ function isTrackedArea(area: string): area is Area {
  * value reached `JSON.parse` and the hook fell back to its initial value.
  */
 export function toStoredValue(value: unknown): string | null | undefined {
-  if (value === undefined) return undefined
+  if (value === undefined) return
 
   return typeof value === 'string' ? value : null
 }
 
-export function toStorageChanges(
-  changes: { [key: string]: { oldValue?: unknown; newValue?: unknown } },
-): { [key: string]: StorageChange } {
+export function toStorageChanges(changes: { [key: string]: { oldValue?: unknown; newValue?: unknown } }): {
+  [key: string]: StorageChange
+} {
   const result: { [key: string]: StorageChange } = {}
 
-  Object.entries(changes).forEach(([key, change]) => {
+  for (const [key, change] of Object.entries(changes)) {
     result[key] = {
       oldValue: toStoredValue(change.oldValue),
       newValue: toStoredValue(change.newValue),
     }
-  })
+  }
 
   return result
 }
@@ -40,9 +40,9 @@ export function toStorageChanges(
 export function toStoredItems(items: { [key: string]: unknown }): { [key: string]: string } {
   const result: { [key: string]: string } = {}
 
-  Object.entries(items).forEach(([key, value]) => {
+  for (const [key, value] of Object.entries(items)) {
     if (typeof value === 'string') result[key] = value
-  })
+  }
 
   return result
 }
@@ -63,9 +63,9 @@ export function createListenerRegistry() {
     fire(changes: { [key: string]: StorageChange }, area: string): void {
       if (!isTrackedArea(area)) return
 
-      listeners[area].forEach(listener => {
+      for (const listener of listeners[area]) {
         listener(changes)
-      })
+      }
     },
     createOnChanged(area: Area): StorageChangeEvent {
       return {

@@ -11,17 +11,35 @@ function Actions() {
   return (
     <div>
       <button
+        type="button"
         onClick={() => {
           setCount(prevCount => prevCount - 1)
-        }}>
+        }}
+      >
         -
       </button>
-      <button onClick={() => { clear() }}>Clear</button>
-      <button onClick={() => { setCount(initialValue) }}>Initial</button>
       <button
+        type="button"
+        onClick={() => {
+          clear()
+        }}
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setCount(initialValue)
+        }}
+      >
+        Initial
+      </button>
+      <button
+        type="button"
         onClick={() => {
           setCount(prevCount => prevCount + 1)
-        }}>
+        }}
+      >
         +
       </button>
     </div>
@@ -31,9 +49,7 @@ function Actions() {
 function Count() {
   const [count] = usePersistedState('count', initialValue)
 
-  return (
-    <div>{count}</div>
-  )
+  return <div>{count}</div>
 }
 
 function SessionStorageExample() {

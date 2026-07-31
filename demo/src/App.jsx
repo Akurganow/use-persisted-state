@@ -21,6 +21,7 @@ function App() {
       <nav style={{ marginBottom: '20px' }}>
         {examples.map(example => (
           <button
+            type="button"
             key={example.id}
             onClick={() => setActiveExample(example.id)}
             style={{
