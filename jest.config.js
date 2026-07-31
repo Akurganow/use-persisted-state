@@ -2,7 +2,13 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['jest-localstorage-mock', 'jest-webextension-mock'],
+  setupFilesAfterEnv: [
+    'jest-localstorage-mock',
+    'jest-webextension-mock',
+    // Registered once here rather than imported per file, so a new component
+    // test cannot silently lose its matchers by forgetting the import.
+    '@testing-library/jest-dom',
+  ],
   // The storage mocks are module-level and record every call, so a
   // `not.toHaveBeenCalled()` assertion only held while declaration order put it
   // first; under `--randomize` a sibling's writes leaked in. Clearing call

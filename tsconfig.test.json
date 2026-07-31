@@ -7,7 +7,9 @@
     "rootDir": ".",
     // The base list exists for the extension adapters in src; tests additionally
     // need jest's globals, which are ambient and not reachable through imports.
-    "types": ["jest", "chrome", "firefox-webext-browser"]
+    // jest-dom is registered through setupFilesAfterEnv, which tsc cannot see, so
+    // its matcher declarations have to be named here or every matcher is a type error.
+    "types": ["jest", "chrome", "firefox-webext-browser", "@testing-library/jest-dom"]
   },
   "include": ["__tests__/**/*.ts", "__tests__/**/*.tsx", "src/**/*.ts"],
   "exclude": ["node_modules", "lib"]
