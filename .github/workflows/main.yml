@@ -82,6 +82,26 @@ jobs:
       - name: Run jest tests
         run: npm run test
 
+      # The suite above runs in declaration order, which is the one order that
+      # cannot expose a test depending on a sibling having run first. The storage
+      # mocks are module-level and record every call, so that dependency is a
+      # standing risk here rather than a hypothetical one — `clearMocks` in
+      # jest.config.js exists because of it, and nothing else in CI would notice
+      # if it were removed.
+      #
+      # The seed is left random rather than pinned to a list: a list can only
+      # re-find the orderings it already found, and the orderings worth finding
+      # are the ones nobody has enumerated. `--showSeed` prints the seed it used,
+      # so a failure here is replayed exactly with
+      # `npx jest --randomize --seed=<printed>`.
+      #
+      # The cost, knowingly accepted: this step can go red on a change that did
+      # not introduce the ordering it tripped over. That is the guard working —
+      # the defect is the order dependence, wherever it came from — but it will
+      # happen to someone who did not cause it.
+      - name: Run jest tests in random order
+        run: npm run test:random
+
   build:
     needs: [test]
     strategy:

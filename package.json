@@ -85,6 +85,7 @@
     "build:types": "tsc --emitDeclarationOnly",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "test": "jest --verbose",
+    "test:random": "jest --randomize --showSeed",
     "test:watch": "npm test -- --watchAll",
     "lint": "biome check",
     "lint:fix": "biome check --write",

@@ -55,7 +55,7 @@ describe('use-storage-handler', () => {
     expect(removeListener).not.toHaveBeenCalled()
   })
 
-  test('restores the initialValue of the first render when the entry is removed', () => {
+  test('restores the initialValue of the latest render when the entry is removed', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
     const pendingOwnWrite = createOwnWriteRecord()
@@ -72,10 +72,10 @@ describe('use-storage-handler', () => {
       fire({ [storageKey]: { oldValue: JSON.stringify({ [itemKey]: 'stored' }), newValue: null } })
     })
 
-    // The hook's own fallback is fixed at mount, as useState's is. A removal has
-    // to reach the same value, or one hook answers "what is the initial value?"
-    // two different ways depending on which path asked.
-    expect(applyValue).toHaveBeenCalledWith('first')
+    // The key-change path reads the initialValue of the render it happens on, so
+    // a removal has to read the same one, or one hook answers "what is the
+    // initial value?" two different ways depending on which path asked.
+    expect(applyValue).toHaveBeenCalledWith('second')
   })
 
   test('does not restore a function initialValue the removed entry already held', () => {
@@ -112,7 +112,10 @@ describe('use-storage-handler', () => {
     expect(applyValue).toHaveBeenCalledWith(null)
   })
 
-  describe('unreadable entries', () => {
+  // Neither case yields a value for the key, and the hook holds its state in
+  // both. What separates them is the diagnostic: a parse failure is a defect the
+  // consumer should hear about, an entry carrying only other keys is routine.
+  describe('entries that yield no value for the key', () => {
     let consoleError: jest.SpyInstance
 
     beforeEach(() => {
@@ -123,7 +126,7 @@ describe('use-storage-handler', () => {
       consoleError.mockRestore()
     })
 
-    test('reports an entry that will not parse rather than passing it off as an absent key', () => {
+    test('reports an entry that will not parse', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
       const pendingOwnWrite = createOwnWriteRecord()
@@ -135,6 +138,21 @@ describe('use-storage-handler', () => {
       })
 
       expect(consoleError).toHaveBeenCalled()
+      expect(applyValue).not.toHaveBeenCalled()
+    })
+
+    test('says nothing about an entry that simply does not carry the key', () => {
+      const { storage, fire } = createSpyStorage()
+      const applyValue = jest.fn()
+      const pendingOwnWrite = createOwnWriteRecord()
+
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite))
+
+      act(() => {
+        fire({ [storageKey]: { oldValue: null, newValue: JSON.stringify({ other: 'value' }) } })
+      })
+
+      expect(consoleError).not.toHaveBeenCalled()
       expect(applyValue).not.toHaveBeenCalled()
     })
   })
