@@ -1,34 +1,25 @@
 ---
-applyTo: "__tests__/**/*.ts"
+applyTo: "__tests__/**/*.{ts,tsx}"
 ---
 
 # Test-Specific Instructions
 
-## Jest Testing Standards
-- Prefer **small, isolated Jest tests** that focus on single units of functionality
-- Use descriptive test names that clearly explain what behavior is being verified
-- Group related tests using `describe` blocks with clear context
+The testing rules live in [`AGENTS.md`](../../AGENTS.md) — in particular the
+requirement that every test be proven able to fail before it counts as coverage.
+What follows only adds detail specific to this suite.
 
-## Storage Mocking
-- **Mock storage/adapters** - avoid real browser storage in unit tests
-- Use `jest-localstorage-mock` for localStorage/sessionStorage testing
-- Use `jest-webextension-mock` for browser extension storage testing
-- Create predictable test data that doesn't depend on external state
+## Mocking storage
 
-## Test Structure & Assertions
-- **Keep assertions focused** - each test should verify one specific behavior
-- **Cover edge cases** for key helpers, especially storage operations and type handling
-- Test error conditions (invalid data, storage failures, etc.)
-- Verify cleanup of event listeners and side effects
+- Never touch real browser storage. `jest-localstorage-mock` covers
+  local/session storage, `jest-webextension-mock` covers extension storage.
+- Cover both the sync and the async storage paths; they are separate hooks with
+  separate failure modes.
+- Clean up between tests (`cleanup()`, clear the storage) so state cannot leak
+  across cases — several adapters share module-level registries.
 
-## React Testing Library Integration
-- Use `@testing-library/react` for component testing
-- Test hooks using `renderHook` from React Testing Library
-- Avoid implementation details - test behavior, not internal state
-- Use `act` wrapper for state updates and async operations
+## React Testing Library
 
-## Test Data & Setup
-- Use consistent test data patterns across similar tests
-- Clean up after tests to prevent test pollution
-- Mock external dependencies consistently
-- Test both sync and async storage scenarios where applicable
+- Drive hooks with `renderHook`, wrap state updates and async work in `act`.
+- Assert on observable behaviour, not internal state.
+- Verify that listeners are removed and effects are cleaned up — leaked
+  subscriptions are a real failure mode for this library, not a hypothetical one.
