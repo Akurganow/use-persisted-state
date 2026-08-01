@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.2](https://github.com/Akurganow/use-persisted-state/compare/v1.4.1...v1.4.2) (2026-08-01)
+
+### Bug Fixes
+
+* **chrome-storage:** call chrome.storage in its promise form ([864c759](https://github.com/Akurganow/use-persisted-state/commit/864c7595e6e9a2cff7dd1edffddfdf0539f11001))
+
 ## [1.4.1](https://github.com/Akurganow/use-persisted-state/compare/v1.4.0...v1.4.1) (2026-08-01)
 
 ### Bug Fixes
