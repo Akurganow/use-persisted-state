@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.5](https://github.com/Akurganow/use-persisted-state/compare/v1.4.4...v1.4.5) (2026-08-01)
+
+### Bug Fixes
+
+* keep a caller-supplied __proto__ key in adapter maps ([8bbefba](https://github.com/Akurganow/use-persisted-state/commit/8bbefbafe7b260a771618973348cc3be6ed44361))
+* name this library in the error a write propagates ([3c1ff0d](https://github.com/Akurganow/use-persisted-state/commit/3c1ff0db598a9524f010653a47a617ebf2ce9bf7))
+* propagate storage write failures ([cc91f26](https://github.com/Akurganow/use-persisted-state/commit/cc91f26da63bfaf2d153857cd8046113fcec114d))
+* reset state for every removal event ([a9c62e5](https://github.com/Akurganow/use-persisted-state/commit/a9c62e518cf1049cd021003b48ca9f895d21e8fd))
+* stop reporting a removal that removed nothing ([061dd82](https://github.com/Akurganow/use-persisted-state/commit/061dd82e5358518d16134af8d7def455af4e8b01))
+* validate shared storage entries ([8509594](https://github.com/Akurganow/use-persisted-state/commit/85095942faca965be4d4cf9babad9f60b3cbb6f9))
+
 ## [1.4.4](https://github.com/Akurganow/use-persisted-state/compare/v1.4.3...v1.4.4) (2026-08-01)
 
 ### Bug Fixes
