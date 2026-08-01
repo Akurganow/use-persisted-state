@@ -227,8 +227,8 @@ persisted_state_hook:example → {"count":0}
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
-A change reported without a `newValue` is the backend's removal signal: every hook on that entry
-resets to its latest initial value, whatever `oldValue` holds. On an asynchronous backend a factory
+A change reported with an absent or `null` `newValue` is the backend's removal signal: every hook on
+that entry resets to its latest initial value, whatever `oldValue` holds. On an asynchronous backend a factory
 serializes its own writes and removals, so a failed operation rejects its caller without stopping
 the ones queued behind it. Separate factories and writers outside the library are not coordinated.
 
