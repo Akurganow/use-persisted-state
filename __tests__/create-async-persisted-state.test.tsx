@@ -390,12 +390,8 @@ describe('concurrent writers on one factory', () => {
   })
 })
 
-describe('own writes', () => {
-  const entryKey = 'persisted_state_hook:echoes'
-
-  test('keeps the value it was given rather than the storage round-trip of it', async () => {
-    // This backend reports the change inside the `set` that made it, which is the arrangement
-    // that proves the record is taken before the write rather than after.
+describe('storage round-trips', () => {
+  test('applies the storage event emitted by its own write', async () => {
     const { asyncStorage } = createFakeAsyncStorage()
     const [useOwnState] = createAsyncPersistedState('own', asyncStorage)
     const { result } = renderHook(() => useOwnState<{ count: number }>('own', { count: 0 }))
@@ -405,65 +401,8 @@ describe('own writes', () => {
       await result.current[1](applied)
     })
 
-    // Decoding the echo yields an equal object with a new identity, so an unsuppressed echo hands
-    // the caller something it did not set and re-renders for it. Identity is what shows that,
-    // where a value assertion passes either way.
-    expect(result.current[0]).toBe(applied)
-  })
-
-  test('suppresses every echo it is still waiting for, not only the last', async () => {
-    const stored: { [key: string]: string } = {}
-    const listeners = new Set<StorageChangeListener>()
-    const heldEchoes: Array<() => void> = []
-
-    // A backend free to report a change after the write it reports has settled, as the extension
-    // backends are. Holding the echoes until both writes have landed is what puts the second
-    // write's record in place before the first write's echo arrives.
-    const lateNotifyingStorage: AsyncStorage = {
-      get: async keys => {
-        const key = Array.isArray(keys) ? keys[0] : keys
-
-        return key in stored ? { [key]: stored[key] } : {}
-      },
-      set: async items => {
-        const changes: { [key: string]: StorageChange } = {}
-
-        for (const [key, value] of Object.entries(items)) {
-          changes[key] = { oldValue: stored[key] ?? null, newValue: value }
-          stored[key] = value
-        }
-
-        heldEchoes.push(() => {
-          for (const listener of [...listeners]) listener(changes)
-        })
-      },
-      remove: async () => undefined,
-      onChanged: {
-        addListener: listener => {
-          listeners.add(listener)
-        },
-        removeListener: listener => {
-          listeners.delete(listener)
-        },
-        hasListener: listener => listeners.has(listener),
-      },
-    }
-    const [useEchoState] = createAsyncPersistedState('echoes', lateNotifyingStorage)
-    const { result } = renderHook(() => useEchoState<string>('value', 'initial'))
-
-    await act(async () => {
-      await result.current[1]('first')
-      await result.current[1]('second')
-    })
-
-    await act(async () => {
-      for (const echo of heldEchoes) echo()
-    })
-
-    // One record held only the latest write, so the first write's echo arrived unclaimed, was
-    // read as somebody else's write and put the earlier value back over the later one.
-    expect(result.current[0]).toBe('second')
-    expect(stored[entryKey]).toBe(JSON.stringify({ value: 'second' }))
+    expect(result.current[0]).toEqual(applied)
+    expect(result.current[0]).not.toBe(applied)
   })
 })
 

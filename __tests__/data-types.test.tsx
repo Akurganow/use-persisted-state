@@ -280,41 +280,18 @@ describe('Data Types Persistence', () => {
   })
 
   describe('Edge Cases', () => {
-    test('should handle NaN values', () => {
-      const { result } = renderHook(() => usePersistedState('nanKey', 0))
+    test.each([
+      ['NaN', 'nanKey', NaN],
+      ['Infinity', 'infinityKey', Infinity],
+      ['-Infinity', 'negInfinityKey', -Infinity],
+    ])('applies stored null after writing %s', (_label, key, value) => {
+      const { result } = renderHook(() => usePersistedState<number | null>(key, 0))
 
       act(() => {
-        result.current[1](NaN)
+        result.current[1](value)
       })
 
-      // Parity with useState within the session: the value handed to the setter is the value the
-      // component keeps. It does not outlive a reload — JSON has no NaN, `JSON.stringify` writes
-      // null, and nothing here promises otherwise; the case below pins what a later reader sees
-      // instead. The accepted cost is that until something remounts, another component on this
-      // key reads the stored null while this one still holds NaN — deliberate, not an oversight,
-      // and the alternative was a second copy of the re-sync the hook deleted. The Infinity cases
-      // follow the same rule.
-      expect(result.current[0]).toBeNaN()
-    })
-
-    test('should handle Infinity values', () => {
-      const { result } = renderHook(() => usePersistedState('infinityKey', 0))
-
-      act(() => {
-        result.current[1](Infinity)
-      })
-
-      expect(result.current[0]).toBe(Infinity)
-    })
-
-    test('should handle -Infinity values', () => {
-      const { result } = renderHook(() => usePersistedState('negInfinityKey', 0))
-
-      act(() => {
-        result.current[1](-Infinity)
-      })
-
-      expect(result.current[0]).toBe(-Infinity)
+      expect(result.current[0]).toBeNull()
     })
 
     test('should read back a NaN written by an earlier instance as null', () => {

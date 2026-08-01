@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.3](https://github.com/Akurganow/use-persisted-state/compare/v1.4.2...v1.4.3) (2026-08-01)
+
+### Bug Fixes
+
+* apply all storage change events ([8074da0](https://github.com/Akurganow/use-persisted-state/commit/8074da04d82646295cc55d05ee764ae13d5bdde1))
+
 ## [1.4.2](https://github.com/Akurganow/use-persisted-state/compare/v1.4.1...v1.4.2) (2026-08-01)
 
 ### Bug Fixes

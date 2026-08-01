@@ -1,5 +1,5 @@
-import React, { Profiler, memo, useEffect, useState } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import React, { Profiler, memo, useState } from 'react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import createPersistedState from '../src'
 import storage from '../src/storages/local-storage'
@@ -23,91 +23,6 @@ describe('a tree holding the hook', () => {
 
   afterEach(() => {
     jest.restoreAllMocks()
-  })
-
-  test('settles a write into a single commit of the whole tree', async () => {
-    let commits = 0
-    const Writer = () => {
-      const [count, setCount] = usePersistedState('commits', 0)
-
-      return (
-        <button type="button" data-testid="writer" onClick={() => setCount(previous => previous + 1)}>
-          {count}
-        </button>
-      )
-    }
-    const Reader = () => {
-      const [count] = usePersistedState('commits', 0)
-
-      return <span data-testid="reader">{count}</span>
-    }
-
-    render(
-      <Profiler
-        id="tree"
-        onRender={() => {
-          commits += 1
-        }}
-      >
-        <Writer />
-        <Reader />
-      </Profiler>,
-    )
-
-    commits = 0
-
-    fireEvent.click(screen.getByTestId('writer'))
-
-    // Waiting past the click is what gives the count below its meaning. A backend
-    // reporting the write to its listeners a tick later would still reach the
-    // reader, but in a second commit — and between the two the tree paints the
-    // writer's new value beside the reader's old one.
-    await waitFor(() => expect(screen.getByTestId('reader')).toHaveTextContent('1'))
-
-    expect(commits).toBe(1)
-  })
-
-  /**
-   * The commit count above cannot see this one. An echo of the hook's own write
-   * arrives while React is still batching the click, so applying it costs no
-   * extra commit — it swaps the value for an equal one decoded out of storage,
-   * and only its identity gives that away.
-   */
-  test('hands back the object it was given, leaving an effect keyed on it asleep', () => {
-    const seenByEffect: { count: number }[] = []
-    const applied = { count: 1 }
-
-    const Consumer = () => {
-      const [value, setValue] = usePersistedState<{ count: number }>('identity', { count: 0 })
-
-      useEffect(() => {
-        seenByEffect.push(value)
-      }, [value])
-
-      return (
-        <button type="button" data-testid="writer" onClick={() => setValue(applied)}>
-          {value.count}
-        </button>
-      )
-    }
-
-    render(<Consumer />)
-
-    fireEvent.click(screen.getByTestId('writer'))
-
-    expect(screen.getByTestId('writer')).toHaveTextContent('1')
-    // What the consumer holds is the object it set, not an equal one decoded back
-    // out of storage.
-    expect(seenByEffect[seenByEffect.length - 1]).toBe(applied)
-
-    const wakesAfterFirstWrite = seenByEffect.length
-
-    fireEvent.click(screen.getByTestId('writer'))
-
-    // Writing the same object again changes nothing a consumer could act on. A
-    // hook that took the storage round-trip would hand back a fresh parse each
-    // time, waking every effect and memo that holds the value on every write.
-    expect(seenByEffect).toHaveLength(wakesAfterFirstWrite)
   })
 
   test('leaves a memoized child alone when the setter is the prop it receives', () => {
