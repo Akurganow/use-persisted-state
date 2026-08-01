@@ -1,7 +1,8 @@
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { AsyncStorage, Storage, StorageChange } from '../@types/storage'
-import { isFunction, isObject } from '@plq/is'
+import { isFunction } from '@plq/is'
+import parsePersistedEntry, { hasOwnPersistedKey, type PersistedEntry } from './parse-persisted-entry'
 
 const useIsomorphicLayoutEffect = typeof globalThis.window === 'undefined' ? useEffect : useLayoutEffect
 
@@ -9,18 +10,17 @@ const useIsomorphicLayoutEffect = typeof globalThis.window === 'undefined' ? use
 type StoredValue<T> = { status: 'stored'; value: T } | { status: 'unavailable' }
 
 function readStoredValue<T>(key: string, entry: string): StoredValue<T> {
-  let parsed: unknown
+  let parsed: PersistedEntry
 
   try {
-    parsed = JSON.parse(entry)
+    parsed = parsePersistedEntry(entry)
   } catch (err) {
     console.error("use-persisted-state: Can't parse value from storage", err)
 
     return { status: 'unavailable' }
   }
 
-  // `in` throws on a primitive, and a throw here cuts off every listener queued behind this one.
-  if (!isObject(parsed) || !(key in parsed)) return { status: 'unavailable' }
+  if (!hasOwnPersistedKey(parsed, key)) return { status: 'unavailable' }
 
   return { status: 'stored', value: parsed[key] as T }
 }

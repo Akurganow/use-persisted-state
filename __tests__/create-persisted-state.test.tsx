@@ -247,15 +247,52 @@ describe('foreign entries under the factory key', () => {
     localStorage.clear()
   })
 
-  test('mounts on its initial value when the entry is a bare JSON primitive', () => {
-    localStorage.setItem(entryKey, '5')
+  test('reports an empty stored entry and falls back to the initial value', () => {
+    localStorage.setItem(entryKey, '')
+    const getItem = localStorage.getItem as jest.Mock
+    const defaultGetItem = getItem.getMockImplementation()
 
-    const { result } = renderHook(() => usePersistedState('foo', 'initial'))
+    // jest-localstorage-mock treats an empty string as absent, unlike Web Storage.
+    getItem.mockImplementation(key => (key in localStorage.__STORE__ ? localStorage.__STORE__[key] : null))
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    // Another writer on the same backend can leave any JSON under the key. The
-    // read happens in the useState initializer, so a throw here does not degrade
-    // the hook, it stops the component mounting at all.
+    try {
+      const { result } = renderHook(() => usePersistedState('foo', 'initial'))
+
+      expect(result.current[0]).toBe('initial')
+      expect(consoleError).toHaveBeenCalledWith(
+        "use-persisted-state: Can't parse value from storage",
+        expect.any(SyntaxError),
+      )
+    } finally {
+      consoleError.mockRestore()
+      getItem.mockImplementation(defaultGetItem)
+    }
+  })
+
+  test('does not read an inherited constructor as a persisted value', () => {
+    localStorage.setItem(entryKey, '{}')
+
+    const { result } = renderHook(() => usePersistedState('constructor', 'initial'))
+
     expect(result.current[0]).toBe('initial')
+  })
+
+  test('reports a non-object JSON entry and mounts on its initial value', () => {
+    localStorage.setItem(entryKey, '5')
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    try {
+      const { result } = renderHook(() => usePersistedState('foo', 'initial'))
+
+      expect(result.current[0]).toBe('initial')
+      expect(consoleError).toHaveBeenCalledWith(
+        "use-persisted-state: Can't parse value from storage",
+        expect.any(TypeError),
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 })
 

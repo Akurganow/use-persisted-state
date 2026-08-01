@@ -127,21 +127,20 @@ describe('use-storage-handler', () => {
       expect(applyValue).not.toHaveBeenCalled()
     })
 
-    test('says nothing about an entry that is a bare JSON primitive', () => {
+    test('reports a non-object JSON entry', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
 
       renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial'))
 
-      // A number parses, so this is not a broken entry: it is a foreign one, as
-      // routine as an entry carrying only other keys. `in` throws on it, and the
-      // throw runs inside the adapter's notify loop, so it would take out every
-      // listener queued behind this one as well.
       act(() => {
         fire({ [storageKey]: { oldValue: null, newValue: '5' } })
       })
 
-      expect(consoleError).not.toHaveBeenCalled()
+      expect(consoleError).toHaveBeenCalledWith(
+        "use-persisted-state: Can't parse value from storage",
+        expect.any(TypeError),
+      )
       expect(applyValue).not.toHaveBeenCalled()
     })
 
@@ -158,6 +157,23 @@ describe('use-storage-handler', () => {
       expect(consoleError).not.toHaveBeenCalled()
       expect(applyValue).not.toHaveBeenCalled()
     })
+  })
+
+  test('treats only an own constructor property as stored', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+
+    renderHook(() => useStorageHandler('constructor', storageKey, applyValue, storage, 'initial'))
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: '{}' } })
+    })
+    expect(applyValue).not.toHaveBeenCalled()
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: '{}', newValue: JSON.stringify({ constructor: 'stored' }) } })
+    })
+    expect(applyValue).toHaveBeenCalledWith('stored')
   })
 
   test('follows the key the hook is rendering for after it changes', () => {
