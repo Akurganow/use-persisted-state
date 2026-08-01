@@ -42,6 +42,8 @@ declarations, `publint` and `attw`; see [packaging](../../docs/packaging.md).
 
 Public API changes follow semver. A behaviour change that users can observe — what the hook returns,
 when it re-renders, what lands in storage — is breaking even when the type signature is untouched.
+Restoring an established contract is the exception: that is a patch fix even though the correction is
+observable. Newly incompatible behaviour remains breaking.
 
 Releases are cut automatically from every push to `main`, so merging a pull request is what publishes.
 The version comes from the commit messages alone: only `feat`, `feature`, `fix`, `perf`, `revert` and

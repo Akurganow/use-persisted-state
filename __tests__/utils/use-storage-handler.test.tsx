@@ -50,40 +50,60 @@ describe('use-storage-handler', () => {
     expect(removeListener).not.toHaveBeenCalled()
   })
 
-  test('restores the initialValue of the latest render when the entry is removed', () => {
+  test('evaluates the functional initial value from the latest render only when the entry is removed', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
+    const firstInitialValue = jest.fn(() => 'first')
+    const latestInitialValue = jest.fn(() => 'second')
 
     const { rerender } = renderHook(
       ({ initialValue }) => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, initialValue),
-      { initialProps: { initialValue: 'first' } },
+      { initialProps: { initialValue: firstInitialValue } },
     )
 
-    rerender({ initialValue: 'second' })
+    rerender({ initialValue: latestInitialValue })
+
+    expect(latestInitialValue).not.toHaveBeenCalled()
+    expect(firstInitialValue).not.toHaveBeenCalled()
 
     act(() => {
       fire({ [storageKey]: { oldValue: JSON.stringify({ [itemKey]: 'stored' }), newValue: null } })
     })
 
-    // The key-change path reads the initialValue of the render it happens on, so
-    // a removal has to read the same one, or one hook answers "what is the
-    // initial value?" two different ways depending on which path asked.
+    expect(firstInitialValue).not.toHaveBeenCalled()
+    expect(latestInitialValue).toHaveBeenCalledTimes(1)
+    expect(applyValue).toHaveBeenCalledTimes(1)
     expect(applyValue).toHaveBeenCalledWith('second')
   })
 
-  test('does not restore a function initialValue the removed entry already held', () => {
-    const { storage, fire } = createSpyStorage()
-    const applyValue = jest.fn()
+  describe('removal events', () => {
+    test.each([
+      ['an omitted new value', { oldValue: JSON.stringify({ [itemKey]: 'stored' }) }],
+      ['an omitted old value', { newValue: null }],
+      ['an equal old value', { oldValue: JSON.stringify({ [itemKey]: 'initial' }), newValue: null }],
+      ['unreadable old bytes', { oldValue: 'not json', newValue: null }],
+    ] satisfies [string, StorageChange][])('restores the initial value for %s', (_name, change) => {
+      const { storage, fire } = createSpyStorage()
+      const applyValue = jest.fn()
 
-    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial'))
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial'))
 
-    act(() => {
-      fire({ [storageKey]: { oldValue: JSON.stringify({ [itemKey]: 'initial' }), newValue: null } })
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const parse = jest.spyOn(JSON, 'parse')
+
+      try {
+        act(() => {
+          fire({ [storageKey]: change })
+        })
+
+        expect(applyValue).toHaveBeenCalledWith('initial')
+        expect(parse).not.toHaveBeenCalled()
+        expect(consoleError).not.toHaveBeenCalled()
+      } finally {
+        parse.mockRestore()
+        consoleError.mockRestore()
+      }
     })
-
-    // A factory is never equal to the value it produces, so comparing against the
-    // declaration instead of the resolved value re-applies it every time.
-    expect(applyValue).not.toHaveBeenCalled()
   })
 
   test('applies a stored null instead of reading it as no value', () => {
@@ -127,21 +147,20 @@ describe('use-storage-handler', () => {
       expect(applyValue).not.toHaveBeenCalled()
     })
 
-    test('says nothing about an entry that is a bare JSON primitive', () => {
+    test('reports a non-object JSON entry', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
 
       renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial'))
 
-      // A number parses, so this is not a broken entry: it is a foreign one, as
-      // routine as an entry carrying only other keys. `in` throws on it, and the
-      // throw runs inside the adapter's notify loop, so it would take out every
-      // listener queued behind this one as well.
       act(() => {
         fire({ [storageKey]: { oldValue: null, newValue: '5' } })
       })
 
-      expect(consoleError).not.toHaveBeenCalled()
+      expect(consoleError).toHaveBeenCalledWith(
+        "use-persisted-state: Can't parse value from storage",
+        expect.any(TypeError),
+      )
       expect(applyValue).not.toHaveBeenCalled()
     })
 
@@ -158,6 +177,38 @@ describe('use-storage-handler', () => {
       expect(consoleError).not.toHaveBeenCalled()
       expect(applyValue).not.toHaveBeenCalled()
     })
+  })
+
+  test('treats only an own constructor property as stored', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+
+    renderHook(() => useStorageHandler('constructor', storageKey, applyValue, storage, 'initial'))
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: '{}' } })
+    })
+    expect(applyValue).not.toHaveBeenCalled()
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: '{}', newValue: JSON.stringify({ constructor: 'stored' }) } })
+    })
+    expect(applyValue).toHaveBeenCalledWith('stored')
+  })
+
+  // `constructor` is an inherited data property and survives being assigned over,
+  // so only `__proto__` catches an entry copied by assignment on this path. The
+  // loss is silent: an update from another tab never reaches the hook.
+  test('applies an own __proto__ property from a change event', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+
+    renderHook(() => useStorageHandler('__proto__', storageKey, applyValue, storage, 'initial'))
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: '{}', newValue: '{"__proto__":"stored"}' } })
+    })
+    expect(applyValue).toHaveBeenCalledWith('stored')
   })
 
   test('follows the key the hook is rendering for after it changes', () => {
@@ -193,21 +244,6 @@ describe('use-storage-handler', () => {
       fire({
         'persisted_state_hook:elsewhere': { oldValue: null, newValue: JSON.stringify({ [itemKey]: 'not ours' }) },
       })
-    })
-
-    expect(applyValue).not.toHaveBeenCalled()
-  })
-
-  test('does not restore the initial value for a removal that reports nothing removed', () => {
-    const { storage, fire } = createSpyStorage()
-    const applyValue = jest.fn()
-
-    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial'))
-
-    // Nothing was there to remove, so nothing changed for this hook. Restoring anyway would
-    // overwrite a value the caller had just set with the initial one.
-    act(() => {
-      fire({ [storageKey]: { oldValue: null, newValue: null } })
     })
 
     expect(applyValue).not.toHaveBeenCalled()

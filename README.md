@@ -82,12 +82,14 @@ const [state, setState] = usePersistedState(key, initialValue)
 
 Works like `useState`: returns the current state and a setter that accepts either a value or an updater function (`prev => next`). In addition, every update is written to the storage backend, and external changes to the stored value update the state.
 
-- Values are serialized with `JSON.stringify`, so they must be JSON-serializable (no functions, class instances, `Map`, `Set`, etc.). A few values serialize into something else rather than failing outright — see [Values JSON cannot carry](#values-json-cannot-carry).
+- Values follow `JSON.stringify`: unsupported members may be omitted or transformed, while values that make serialization throw are not persisted. See [Values JSON cannot carry](#values-json-cannot-carry).
+- Setters update React state optimistically before persistence. A synchronous setter throws and an asynchronous setter rejects if reading, parsing, serializing, or writing the shared entry fails. Parsing and serialization failures leave the stored entry unchanged.
+- **Await an asynchronous setter, or give it a `catch`.** It returns a promise, and a rejected one nobody handles ends the process on Node 15 and later.
 - With an asynchronous backend, the hook renders `initialValue` first and updates once the stored value has loaded.
 
 ### `clear()`
 
-Removes the factory's whole storage entry. Hooks created by that factory fall back to their initial values. Returns `void` for synchronous backends and `Promise<void>` for asynchronous ones.
+Removes the factory's whole storage entry. Hooks created by that factory fall back to their initial values. An entry that was not there is not reported as removed, so nothing resets. Returns `void` for synchronous backends and `Promise<void>` for asynchronous ones.
 
 ### TypeScript
 
@@ -225,13 +227,25 @@ persisted_state_hook:example → {"count":0}
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
+A change reported with an absent or `null` `newValue` is the backend's removal signal: every hook on
+that entry resets to its latest initial value, whatever `oldValue` holds. On an asynchronous backend a factory
+serializes its own writes and removals, so a failed operation rejects its caller without stopping
+the ones queued behind it. Separate factories and writers outside the library are not coordinated.
+
 ### An entry the library cannot read
 
 A write replaces the factory's whole entry, so there is nothing safe to store when the entry already
-there is a string that will not parse, or parses to something that is not an object — another
-library writing under the same key, or a write cut short. The setter reports the failure on
-`console.error`, keeps the value you set in memory and writes nothing, leaving every other hook's
-key exactly where it is. The factory's `clear` removes the entry and lets writing resume.
+there is a string that will not parse — the empty string included — or parses to something that is
+not an object: another library writing under the same key, or a write cut short. Such an entry is
+never rebuilt, and every other hook's key stays exactly where it is:
+
+- an initial read reports the entry on `console.error` and the hook mounts on its initial value;
+- a storage change carrying such an entry is reported and ignored, leaving the hook where it is;
+- a setter keeps the value you set in memory, writes nothing, and then throws on a synchronous
+  backend or rejects on an asynchronous one, so the failure is yours to handle. Earlier versions
+  reported it on `console.error` instead; nothing is logged for a failed write now.
+
+The factory's `clear` removes the entry and lets writing resume.
 
 This reaches as far as the adapter reports. Web storage holds only strings, so anything under the
 key comes back and is checked. Extension storage holds arbitrary JSON, and the bundled adapters
@@ -245,10 +259,9 @@ A few values do not survive `JSON.stringify`. This follows from the format rathe
 the library makes, and no adapter can repair it: once a value has been written, nothing in storage
 tells a `null` you stored apart from a `null` that JSON produced.
 
-- **`undefined`** — the key is dropped, so nothing reaches storage at all. The component that set it
-  keeps `undefined` in memory, as `useState` would, and other components already mounted on that key
-  see no change and keep the value they hold. After a remount or a reload the key is absent, so the
-  initial value comes back.
+- **`undefined`** — JSON omits that hook key. The writer retains `undefined`, the shared entry is
+  rewritten without that key while sibling keys survive, mounted listeners receiving an entry
+  without the key keep their current value, and a fresh reader uses its initial value.
 - **`NaN`, `Infinity`, `-Infinity`** — these are written as `null`. A storage change reported by the
   backend applies that `null` to every listening component, including the writer. Any reader after
   a reload also reads back `null`.

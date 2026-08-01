@@ -1,7 +1,8 @@
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { AsyncStorage, Storage, StorageChange } from '../@types/storage'
-import { isFunction, isObject } from '@plq/is'
+import { isFunction } from '@plq/is'
+import parsePersistedEntry, { hasOwnPersistedKey, type PersistedEntry } from './parse-persisted-entry'
 
 const useIsomorphicLayoutEffect = typeof globalThis.window === 'undefined' ? useEffect : useLayoutEffect
 
@@ -9,37 +10,27 @@ const useIsomorphicLayoutEffect = typeof globalThis.window === 'undefined' ? use
 type StoredValue<T> = { status: 'stored'; value: T } | { status: 'unavailable' }
 
 function readStoredValue<T>(key: string, entry: string): StoredValue<T> {
-  let parsed: unknown
+  let parsed: PersistedEntry
 
   try {
-    parsed = JSON.parse(entry)
+    parsed = parsePersistedEntry(entry)
   } catch (err) {
     console.error("use-persisted-state: Can't parse value from storage", err)
 
     return { status: 'unavailable' }
   }
 
-  // `in` throws on a primitive, and a throw here cuts off every listener queued behind this one.
-  if (!isObject(parsed) || !(key in parsed)) return { status: 'unavailable' }
+  if (!hasOwnPersistedKey(parsed, key)) return { status: 'unavailable' }
 
   return { status: 'stored', value: parsed[key] as T }
 }
 
-function applyRemoval<T>(
-  change: StorageChange,
-  itemKey: string,
+function applyInitialValue<T>(
   applyValue: (value: T) => void,
   latestInitialValue: React.RefObject<T | (() => T)>,
 ): void {
-  if (change.oldValue === null || change.oldValue === undefined) return
-
-  const oldValue = readStoredValue<T>(itemKey, change.oldValue)
   const declaredInitialValue = latestInitialValue.current
-  // Resolved before comparing: a factory is never equal to what it produces.
   const initialValue = isFunction(declaredInitialValue) ? declaredInitialValue() : declaredInitialValue
-
-  // Restore redundantly rather than leave stale state when the entry's old value cannot be read.
-  if (oldValue.status === 'stored' && oldValue.value === initialValue) return
 
   applyValue(initialValue)
 }
@@ -55,7 +46,9 @@ function createStorageHandler<T>(
       if (key !== storageKey) continue
 
       if (change.newValue === null || change.newValue === undefined) {
-        applyRemoval<T>(change, itemKey, applyValue, latestInitialValue)
+        // Applied every time: the listener cannot prove the current React state
+        // already matches, so comparing `oldValue` would skip resets that are needed.
+        applyInitialValue(applyValue, latestInitialValue)
         continue
       }
 

@@ -1,25 +1,14 @@
-import { isObject } from '@plq/is'
+import parsePersistedEntry from './parse-persisted-entry'
 
-/** Merges `newValue` under `key` into the shared entry, throwing rather than rebuilding one it cannot read. */
-export default function getNewItem<T>(key: string, persistedItem: string, newValue: T): string {
-  let persist: unknown
+/**
+ * Merges `newValue` under `key` into the shared entry and serializes the result.
+ *
+ * A parse failure propagates: the caller owns an entry this must not rebuild.
+ */
+export default function getNewItem<T>(key: string, persistedItem: string | undefined, newValue: T): string {
+  const persist = parsePersistedEntry(persistedItem)
 
-  try {
-    persist = persistedItem ? JSON.parse(persistedItem) : {}
-  } catch (err) {
-    console.error("use-persisted-state: Can't write value to storage", err)
-
-    throw err
-  }
-
-  if (!isObject(persist)) {
-    // Neither a primitive nor an array survives being merged into: the value being set would disappear.
-    const err = new TypeError('the stored entry is not an object of keys')
-
-    console.error("use-persisted-state: Can't write value to storage", err)
-
-    throw err
-  }
-
+  // Spread and a computed key define own properties; assigning instead would lose
+  // a sibling hook's `__proto__` key. See PersistedEntry.
   return JSON.stringify({ ...persist, [key]: newValue })
 }

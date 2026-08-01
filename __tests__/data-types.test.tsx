@@ -18,16 +18,10 @@ type PersistOutcome<T> = {
 }
 
 /**
- * Writes `value` through the hook and reports the three things persisting it
- * produced: the value the writer holds, the entry that reached storage, and the
- * value a hook that never saw the write reads back.
+ * Persists a value and observes the writer, serialized entry, and a fresh reader.
  *
- * Every case below asserts all three, because each catches a different failure
- * and the held value catches none of them: a hook that writes nothing at all
- * satisfies it, which is what left every `should persist` case here green with
- * the write deleted from the setter. The entry shows what the type encodes to,
- * and the read-back shows a fresh mount decoding it back rather than falling
- * through to its initial value.
+ * Every case asserts all three: the held value alone stays green with the write
+ * deleted from the setter.
  */
 function persistThroughStorage<T>(key: string, initialValue: T, value: T): PersistOutcome<T> {
   const { result: writer } = renderHook(() => usePersistedState<T>(key, initialValue))
@@ -207,9 +201,8 @@ describe('Data Types Persistence', () => {
         result.current[1](undefined)
       })
 
-      // useState parity: JSON cannot persist undefined, but the in-memory
-      // value the setter was given must stay undefined instead of snapping
-      // back to the initial value.
+      // useState parity: JSON cannot persist undefined, but the value the setter
+      // was given must not snap back to the initial value.
       expect(result.current[0]).toBeUndefined()
     })
 
@@ -226,11 +219,31 @@ describe('Data Types Persistence', () => {
         result.current[1](undefined)
       })
 
-      // What the write leaves behind, which is what separates this from the case
-      // above: JSON drops an undefined member, so the entry is written without
-      // the key and a later mount finds nothing to restore.
+      // JSON drops an undefined member, so the entry is written without the key
+      // and a later mount finds nothing to restore.
       expect(localStorage.__STORE__[entryKey]).toBe(JSON.stringify({}))
       expect(result.current[0]).toBeUndefined()
+    })
+
+    test('should drop only the written key from an entry that already held it', () => {
+      // Seeded with the key: writing undefined into an entry that never held it
+      // stays green even when the write keeps the old value instead of dropping it.
+      localStorage.setItem(entryKey, JSON.stringify({ undefinedDropKey: 'persisted', sibling: 'kept' }))
+
+      const { result } = renderHook(() => usePersistedState<string | undefined>('undefinedDropKey', 'initial'))
+
+      act(() => {
+        result.current[1](undefined)
+      })
+
+      expect(result.current[0]).toBeUndefined()
+      expect(readStoredEntry()).toEqual({ sibling: 'kept' })
+
+      const { result: reader } = renderHook(() =>
+        usePersistedState<string | undefined>('undefinedDropKey', 'fresh initial'),
+      )
+
+      expect(reader.current[0]).toBe('fresh initial')
     })
   })
 

@@ -82,6 +82,76 @@ describe('create-web-storage', function () {
     expect(emptyStringStorage.get('emptyKey')).toEqual({ emptyKey: '' })
   })
 
+  // A reported removal resets every hook on the entry to its initial value, and a
+  // functional initial value is called to do it. Reporting one for a key that held
+  // nothing mints a fresh value from an operation that removed nothing.
+  test('should report a removal only for a key that held something', function () {
+    const removalStorage = createWebStorage(createMemoryArea({ present: 'value', emptyKey: '' }))
+    const listener = jest.fn()
+
+    removalStorage.onChanged.addListener(listener)
+
+    try {
+      removalStorage.remove('absent')
+
+      expect(listener).not.toHaveBeenCalled()
+
+      removalStorage.remove('present')
+
+      expect(listener).toHaveBeenCalledWith({ present: { oldValue: 'value', newValue: null } })
+
+      // A stored empty string was removed, so it is reported: absence is `null`
+      // alone, and a truthiness check here would drop this event.
+      removalStorage.remove('emptyKey')
+
+      expect(listener).toHaveBeenLastCalledWith({ emptyKey: { oldValue: '', newValue: null } })
+    } finally {
+      removalStorage.onChanged.removeListener(listener)
+    }
+  })
+
+  // A storage key is whatever the caller passes. Building the result and the
+  // change map by assignment would send `__proto__` to the accessor on
+  // `Object.prototype`: the write reaches the area but neither the read nor the
+  // listener ever sees it.
+  test('should carry a __proto__ storage key through write, read and notify', function () {
+    const protoStorage = createWebStorage(createMemoryArea({}))
+    const listener = jest.fn()
+
+    // Every `__proto__` below is a computed key on purpose: written as a literal
+    // it would set the prototype instead, and the case would assert nothing.
+    protoStorage.onChanged.addListener(listener)
+
+    try {
+      protoStorage.set({ ['__proto__']: 'written' })
+
+      expect(listener).toHaveBeenCalledWith({ ['__proto__']: { oldValue: null, newValue: 'written' } })
+      expect(protoStorage.get('__proto__')).toEqual({ ['__proto__']: 'written' })
+
+      protoStorage.remove('__proto__')
+
+      expect(listener).toHaveBeenLastCalledWith({ ['__proto__']: { oldValue: 'written', newValue: null } })
+      expect(protoStorage.get('__proto__')).toEqual({})
+    } finally {
+      protoStorage.onChanged.removeListener(listener)
+    }
+  })
+
+  test('should report nothing for a write of no items', function () {
+    const emptyWriteStorage = createWebStorage(createMemoryArea({}))
+    const listener = jest.fn()
+
+    emptyWriteStorage.onChanged.addListener(listener)
+
+    try {
+      emptyWriteStorage.set({})
+
+      expect(listener).not.toHaveBeenCalled()
+    } finally {
+      emptyWriteStorage.onChanged.removeListener(listener)
+    }
+  })
+
   // Without a storage global the adapter is inert, but it still has to satisfy
   // the Storage contract: a caller subscribing on the server must not crash.
   describe('without a storage global', function () {

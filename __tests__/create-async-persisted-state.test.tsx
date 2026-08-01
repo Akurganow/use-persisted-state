@@ -48,28 +48,33 @@ function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferre
 
     return result
   })
+  const set = jest.fn(async (items: { [key: string]: string }) => {
+    const changes: { [key: string]: StorageChange } = {}
+
+    for (const [key, value] of Object.entries(items)) {
+      changes[key] = { oldValue: stored[key] ?? null, newValue: value }
+      stored[key] = value
+    }
+
+    fire(changes)
+  })
+  const remove = jest.fn(async (keys: string | string[]) => {
+    const changes: { [key: string]: StorageChange } = {}
+
+    for (const key of toKeyList(keys)) {
+      // As the bundled adapters do: a key that held nothing is not reported removed.
+      if (!(key in stored)) continue
+
+      changes[key] = { oldValue: stored[key], newValue: null }
+      delete stored[key]
+    }
+
+    if (Object.keys(changes).length > 0) fire(changes)
+  })
   const asyncStorage: AsyncStorage = {
     get,
-    set: jest.fn(async items => {
-      const changes: { [key: string]: StorageChange } = {}
-
-      for (const [key, value] of Object.entries(items)) {
-        changes[key] = { oldValue: stored[key] ?? null, newValue: value }
-        stored[key] = value
-      }
-
-      fire(changes)
-    }),
-    remove: jest.fn(async keys => {
-      const changes: { [key: string]: StorageChange } = {}
-
-      for (const key of toKeyList(keys)) {
-        changes[key] = { oldValue: stored[key] ?? null, newValue: null }
-        delete stored[key]
-      }
-
-      fire(changes)
-    }),
+    set,
+    remove,
     onChanged: {
       addListener: listener => {
         listeners.add(listener)
@@ -86,7 +91,7 @@ function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferre
     }
   }
 
-  return { asyncStorage, get, releaseReads, stored }
+  return { asyncStorage, get, set, remove, releaseReads, stored }
 }
 
 describe('hook defined correctly', () => {
@@ -164,17 +169,20 @@ describe('reference initial values', () => {
 })
 
 describe('functional updates', () => {
-  test('applies every functional update queued in one batch', async () => {
-    const { asyncStorage } = createFakeAsyncStorage()
+  test('persists every functional update queued in one batch', async () => {
+    const { asyncStorage, stored } = createFakeAsyncStorage()
     const [useCountPersistedState] = createAsyncPersistedState('updates', asyncStorage)
     const { result } = renderHook(() => useCountPersistedState('count', 0))
 
     await act(async () => {
-      result.current[1](previous => previous + 1)
-      result.current[1](previous => previous + 1)
+      const first = result.current[1](previous => previous + 1)
+      const second = result.current[1](previous => previous + 1)
+
+      await Promise.all([first, second])
     })
 
     expect(result.current[0]).toBe(2)
+    expect(JSON.parse(stored['persisted_state_hook:updates'])).toEqual({ count: 2 })
   })
 })
 
@@ -483,105 +491,185 @@ describe('storage round-trips', () => {
     expect(result.current[0]).toEqual(applied)
     expect(result.current[0]).not.toBe(applied)
   })
+
+  test('rewrites the entry without the key when a setter receives undefined', async () => {
+    const entryKey = 'persisted_state_hook:undefinedAsync'
+    // Seeded with the target key, so a setter that never persists leaves
+    // 'persisted' behind for the fresh reader instead of its initial value.
+    const { asyncStorage, stored } = createFakeAsyncStorage({
+      [entryKey]: JSON.stringify({ target: 'persisted', sibling: 'kept' }),
+    })
+    const [useUndefinedState] = createAsyncPersistedState('undefinedAsync', asyncStorage)
+    const { result } = renderHook(() => useUndefinedState<string | undefined>('target', 'initial'))
+
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current[1](undefined)
+    })
+
+    expect(result.current[0]).toBeUndefined()
+    expect(JSON.parse(stored[entryKey])).toEqual({ sibling: 'kept' })
+
+    const { result: reader } = renderHook(() => useUndefinedState<string | undefined>('target', 'fresh initial'))
+
+    await act(async () => {})
+
+    expect(reader.current[0]).toBe('fresh initial')
+  })
 })
 
-describe('an entry the hook cannot read', () => {
-  const entryKey = 'persisted_state_hook:damagedAsync'
-  let consoleError: jest.SpyInstance
+describe('write failures', () => {
+  const entryKey = 'persisted_state_hook:writeFailuresAsync'
 
   beforeEach(() => {
     cleanup()
-    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
   })
 
-  afterEach(() => {
-    consoleError.mockRestore()
+  test.each([
+    ['an empty shared entry', '', SyntaxError],
+    ['an unreadable entry', '{"alpha":"one"', SyntaxError],
+    ['a non-object entry', 'null', TypeError],
+  ])('rejects for %s, preserves its bytes, and recovers the queue', async (_name, persistedEntry, ErrorType) => {
+    const { asyncStorage, set, stored } = createFakeAsyncStorage({ [entryKey]: persistedEntry })
+    const [useWriteFailureState] = createAsyncPersistedState('writeFailuresAsync', asyncStorage)
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    try {
+      const { result } = renderHook(() => useWriteFailureState('gamma', 'initial'))
+      let rejection: unknown
+
+      await act(async () => {})
+      consoleError.mockClear()
+
+      await act(async () => {
+        try {
+          await result.current[1]('requested')
+        } catch (error) {
+          rejection = error
+        }
+      })
+
+      expect(rejection).toBeInstanceOf(ErrorType)
+      expect(result.current[0]).toBe('requested')
+      expect(stored[entryKey]).toBe(persistedEntry)
+      expect(set).not.toHaveBeenCalled()
+      expect(consoleError).not.toHaveBeenCalled()
+
+      stored[entryKey] = '{"alpha":"one"}'
+
+      await act(async () => {
+        await result.current[1]('accepted')
+      })
+
+      expect(stored[entryKey]).toBe('{"alpha":"one","gamma":"accepted"}')
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
-  test('is left in storage rather than replaced by the next write', async () => {
-    // Truncated rather than garbage on purpose: alpha and beta are still legible in the bytes,
-    // and only a write that replaces them makes the loss permanent.
-    const damagedEntry = '{"alpha":"one","beta":"two"'
-    const { asyncStorage, stored } = createFakeAsyncStorage({ [entryKey]: damagedEntry })
-    const [useDamagedState] = createAsyncPersistedState('damagedAsync', asyncStorage)
-    const { result } = renderHook(() => useDamagedState('gamma', 'initial'))
+  test('rejects on serialization failure, preserves the entry, and recovers the queue', async () => {
+    const persistedEntry = '{"alpha":"one"}'
+    const { asyncStorage, set, stored } = createFakeAsyncStorage({ [entryKey]: persistedEntry })
+    const [useWriteFailureState] = createAsyncPersistedState('writeFailuresAsync', asyncStorage)
+    const { result } = renderHook(() => useWriteFailureState<object>('gamma', {}))
+    const circular: { self?: unknown } = {}
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    let rejection: unknown
+
+    try {
+      circular.self = circular
+      await act(async () => {})
+
+      await act(async () => {
+        try {
+          await result.current[1](circular)
+        } catch (error) {
+          rejection = error
+        }
+      })
+
+      expect(rejection).toBeInstanceOf(TypeError)
+      expect(result.current[0]).toBe(circular)
+      expect(stored[entryKey]).toBe(persistedEntry)
+      expect(set).not.toHaveBeenCalled()
+      expect(consoleError).not.toHaveBeenCalled()
+
+      await act(async () => {
+        await result.current[1]({ accepted: true })
+      })
+
+      expect(stored[entryKey]).toBe('{"alpha":"one","gamma":{"accepted":true}}')
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  test('propagates a write-time backend get failure and recovers the queue', async () => {
+    const failure = new Error('get failed')
+    const { asyncStorage, get, set, stored } = createFakeAsyncStorage()
+    const [useWriteFailureState] = createAsyncPersistedState('writeFailuresAsync', asyncStorage)
+    const { result } = renderHook(() => useWriteFailureState('gamma', 'initial'))
+
+    await act(async () => {})
+    get.mockRejectedValueOnce(failure)
 
     await act(async () => {
-      await result.current[1]('three')
+      await expect(result.current[1]('requested')).rejects.toBe(failure)
     })
 
-    // The write is refused, not the update: the caller keeps what it set, and hears why it did
-    // not persist.
-    expect(result.current[0]).toBe('three')
-    expect(stored[entryKey]).toBe(damagedEntry)
-    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't write value to storage", expect.any(Error))
-  })
-
-  test('does not reject the setter, and lets the writes that follow land', async () => {
-    const { asyncStorage, stored } = createFakeAsyncStorage({ [entryKey]: '{"alpha":"one"' })
-    const [useDamagedState] = createAsyncPersistedState('damagedAsync', asyncStorage)
-    const { result } = renderHook(() => useDamagedState('gamma', 'initial'))
-
-    // A refusal that reached the caller as a rejection would be an unhandled rejection in every
-    // consumer that treats the setter as `useState`'s, and those end the process on Node 15+.
-    await act(async () => {
-      await result.current[1]('refused')
-    })
-
-    stored[entryKey] = JSON.stringify({ alpha: 'one' })
+    expect(result.current[0]).toBe('requested')
+    expect(set).not.toHaveBeenCalled()
 
     await act(async () => {
       await result.current[1]('accepted')
     })
 
-    expect(JSON.parse(stored[entryKey])).toEqual({ alpha: 'one', gamma: 'accepted' })
+    expect(stored[entryKey]).toBe('{"gamma":"accepted"}')
   })
-})
 
-describe('a backend that rejects a write', () => {
-  const entryKey = 'persisted_state_hook:flaky'
+  test('propagates a backend set failure and recovers the queue', async () => {
+    const failure = new Error('set failed')
+    const { asyncStorage, set, stored } = createFakeAsyncStorage()
+    const [useWriteFailureState] = createAsyncPersistedState('writeFailuresAsync', asyncStorage)
+    const { result } = renderHook(() => useWriteFailureState('gamma', 'initial'))
 
-  test('keeps the entry writable for the calls behind the one that failed', async () => {
-    const stored: { [key: string]: string } = {}
-    let shouldRejectWrite = true
-
-    const flakyStorage: AsyncStorage = {
-      get: async keys => {
-        const key = Array.isArray(keys) ? keys[0] : keys
-
-        return key in stored ? { [key]: stored[key] } : {}
-      },
-      set: async items => {
-        if (shouldRejectWrite) {
-          shouldRejectWrite = false
-
-          throw new Error('write rejected')
-        }
-
-        Object.assign(stored, items)
-      },
-      remove: async () => undefined,
-      onChanged: {
-        addListener: () => undefined,
-        removeListener: () => undefined,
-        hasListener: () => false,
-      },
-    }
-    const [useFlakyState] = createAsyncPersistedState('flaky', flakyStorage)
-    const { result } = renderHook(() => useFlakyState<string>('value', 'initial'))
+    await act(async () => {})
+    set.mockRejectedValueOnce(failure)
 
     await act(async () => {
-      await expect(result.current[1]('first')).rejects.toThrow('write rejected')
+      await expect(result.current[1]('requested')).rejects.toBe(failure)
     })
+
+    expect(result.current[0]).toBe('requested')
+    expect(stored[entryKey]).toBeUndefined()
 
     await act(async () => {
-      await result.current[1]('second')
+      await result.current[1]('accepted')
     })
 
-    // Writes on one entry run one at a time, and the next one has to start from the settled
-    // promise rather than from the rejected one: chained onto the rejection it would stay pending
-    // for ever, so one failed write would silently stop every later write on the factory.
-    expect(JSON.parse(stored[entryKey])).toEqual({ value: 'second' })
+    expect(stored[entryKey]).toBe('{"gamma":"accepted"}')
+  })
+
+  test('propagates a backend remove failure and recovers the queue', async () => {
+    const failure = new Error('remove failed')
+    const persistedEntry = '{"gamma":"kept"}'
+    const { asyncStorage, remove, stored } = createFakeAsyncStorage({ [entryKey]: persistedEntry })
+    const [, clearFailedEntry] = createAsyncPersistedState('writeFailuresAsync', asyncStorage)
+
+    remove.mockRejectedValueOnce(failure)
+
+    await act(async () => {
+      await expect(clearFailedEntry()).rejects.toBe(failure)
+    })
+
+    expect(stored[entryKey]).toBe(persistedEntry)
+
+    await act(async () => {
+      await clearFailedEntry()
+    })
+
+    expect(stored[entryKey]).toBeUndefined()
   })
 })
 
