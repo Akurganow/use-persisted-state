@@ -22,22 +22,9 @@ on:
   push:
     branches:
       - main
-  # Kept beside the automatic trigger for what a push cannot express: forcing an increment the
-  # history understates, and rehearsing the pipeline with --dry-run. It is also the only way to
-  # retry a release whose commits already sit on main, after an outage at npm or GitHub, without
-  # inventing an empty commit to push.
+  # Allows dry runs and retrying a release after an npm or GitHub outage.
   workflow_dispatch:
     inputs:
-      increment:
-        description: 'Version increment. Leave as "auto" to derive it from conventional commits.'
-        required: false
-        type: choice
-        options:
-          - auto
-          - patch
-          - minor
-          - major
-        default: auto
       # A run that died after the tag was pushed cannot be finished by starting an ordinary one:
       # the tag is the newest, no commits follow it, and the release ends in "No new version to
       # release" having done nothing. This targets the version already tagged instead of deriving
@@ -108,20 +95,14 @@ jobs:
         # token path whenever it is set, instead of using OIDC.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INCREMENT: ${{ inputs.increment }}
           RETRY_CURRENT: ${{ inputs.retry-current }}
           DRY_RUN: ${{ inputs.dry-run }}
         run: |
           args=()
 
-          # Retrying targets the version already tagged, so an increment would contradict it.
-          # The inputs are all empty on any event other than workflow_dispatch, and testing
-          # against 'auto' alone would hand release-it an empty positional argument, which is
-          # why the emptiness is checked first.
+          # Retrying targets the version already tagged rather than deriving a new one.
           if [ "$RETRY_CURRENT" = 'true' ]; then
             args+=('--no-increment')
-          elif [ -n "$INCREMENT" ] && [ "$INCREMENT" != 'auto' ]; then
-            args+=("$INCREMENT")
           fi
 
           if [ "$DRY_RUN" = 'true' ]; then
