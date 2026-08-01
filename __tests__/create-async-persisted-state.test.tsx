@@ -232,6 +232,31 @@ describe('changing key', () => {
 
     expect(result.current[0]).toBe('value-second')
   })
+
+  test('loads the new key after the previous one has already applied a value', async () => {
+    const { asyncStorage } = createFakeAsyncStorage({
+      'persisted_state_hook:appliedKeys': JSON.stringify({ first: 'value-first', second: 'value-second' }),
+    })
+    const [useKeyedPersistedState] = createAsyncPersistedState('appliedKeys', asyncStorage)
+
+    const { result, rerender } = renderHook(({ itemKey }) => useKeyedPersistedState(itemKey, 'initial'), {
+      initialProps: { itemKey: 'first' },
+    })
+
+    await act(async () => {})
+
+    // The load for the first key has applied, which is the state the second load has to be able
+    // to overrule. The flag that stops a late load reverting a value the caller set belongs to
+    // the key it was raised for; carried across, it shuts the new key's load out for good and the
+    // hook shows the previous key's value under the new key.
+    expect(result.current[0]).toBe('value-first')
+
+    rerender({ itemKey: 'second' })
+
+    await act(async () => {})
+
+    expect(result.current[0]).toBe('value-second')
+  })
 })
 
 describe('setter identity', () => {
@@ -367,6 +392,24 @@ describe('concurrent writers on one factory', () => {
 
 describe('own writes', () => {
   const entryKey = 'persisted_state_hook:echoes'
+
+  test('keeps the value it was given rather than the storage round-trip of it', async () => {
+    // This backend reports the change inside the `set` that made it, which is the arrangement
+    // that proves the record is taken before the write rather than after.
+    const { asyncStorage } = createFakeAsyncStorage()
+    const [useOwnState] = createAsyncPersistedState('own', asyncStorage)
+    const { result } = renderHook(() => useOwnState<{ count: number }>('own', { count: 0 }))
+    const applied = { count: 1 }
+
+    await act(async () => {
+      await result.current[1](applied)
+    })
+
+    // Decoding the echo yields an equal object with a new identity, so an unsuppressed echo hands
+    // the caller something it did not set and re-renders for it. Identity is what shows that,
+    // where a value assertion passes either way.
+    expect(result.current[0]).toBe(applied)
+  })
 
   test('suppresses every echo it is still waiting for, not only the last', async () => {
     const stored: { [key: string]: string } = {}
@@ -521,5 +564,28 @@ describe('a backend that rejects a write', () => {
     // promise rather than from the rejected one: chained onto the rejection it would stay pending
     // for ever, so one failed write would silently stop every later write on the factory.
     expect(JSON.parse(stored[entryKey])).toEqual({ value: 'second' })
+  })
+})
+
+describe('clearing', () => {
+  const entryKey = 'persisted_state_hook:cleared'
+
+  test('is not undone by a write already on its way to storage', async () => {
+    const { asyncStorage, stored } = createFakeAsyncStorage()
+    const [useDraftState, clearDrafts] = createAsyncPersistedState('cleared', asyncStorage)
+    const { result } = renderHook(() => useDraftState<string>('draft', 'initial'))
+
+    await act(async () => {
+      // Requested while a write is still in flight, which is what the button doing it competes
+      // with in practice. Outside the chain the removal runs first and the write lands after it,
+      // putting back what was asked to be gone - and "clear this data" is the one request that
+      // must not half happen.
+      const write = result.current[1]('typed just before')
+      const cleared = clearDrafts()
+
+      await Promise.all([write, cleared])
+    })
+
+    expect(stored[entryKey]).toBeUndefined()
   })
 })

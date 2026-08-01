@@ -413,10 +413,10 @@ describe('an entry the hook cannot read', () => {
 
   test('survives a write when it is a foreign JSON value', () => {
     // A bare `null` did not merely lose the write, it threw out of the setter and into whatever
-    // called it, which for a consumer is a click handler. `act` absorbs a throw raised once an
-    // update is queued, so the case has to catch it itself: asserting only the storage would
-    // pass on the defect, whose crash leaves the entry untouched for the same reason a refusal
-    // does.
+    // called it, which for a consumer is a click handler. Catching that throw here is the whole
+    // point of the case: a crashing setter leaves the entry untouched for the same reason a
+    // refusal does, so the storage assertion below holds either way and proves nothing on its
+    // own. What separates the two is whether the caller was handed an exception.
     localStorage.setItem(entryKey, 'null')
 
     const { result } = renderHook(() => usePersistedState('gamma', 'initial'))

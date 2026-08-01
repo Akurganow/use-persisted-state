@@ -1,6 +1,6 @@
 import type React from 'react'
 import { renderHook, act } from '@testing-library/react'
-import useStorageHandler from '../../src/utils/use-storage-handler'
+import useStorageHandler, { recordOwnWrite } from '../../src/utils/use-storage-handler'
 import type { Storage, StorageChange, StorageChangeListener } from '../../src/@types/storage'
 
 const storageKey = 'persisted_state_hook:test'
@@ -176,6 +176,63 @@ describe('use-storage-handler', () => {
     })
   })
 
+  test('follows the key the hook is rendering for after it changes', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+    const pendingOwnWrites = createOwnWriteRecord()
+
+    const { rerender } = renderHook(
+      ({ renderedKey }) =>
+        useStorageHandler<string>(renderedKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites),
+      { initialProps: { renderedKey: 'first' } },
+    )
+
+    rerender({ renderedKey: 'second' })
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: JSON.stringify({ first: 'FIRST', second: 'SECOND' }) } })
+    })
+
+    // A listener left subscribed for the key the hook mounted with reads the wrong property out
+    // of every entry that arrives afterwards, and hands the caller another key's value.
+    expect(applyValue).toHaveBeenCalledWith('SECOND')
+    expect(applyValue).not.toHaveBeenCalledWith('FIRST')
+  })
+
+  test('ignores a change reported for another factory entry', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+    const pendingOwnWrites = createOwnWriteRecord()
+
+    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
+
+    // Factories share a backend, and its listeners hear about every key in it. An entry of
+    // another factory can hold this hook's item key and mean something entirely different.
+    act(() => {
+      fire({
+        'persisted_state_hook:elsewhere': { oldValue: null, newValue: JSON.stringify({ [itemKey]: 'not ours' }) },
+      })
+    })
+
+    expect(applyValue).not.toHaveBeenCalled()
+  })
+
+  test('does not restore the initial value for a removal that reports nothing removed', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+    const pendingOwnWrites = createOwnWriteRecord()
+
+    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
+
+    // Nothing was there to remove, so nothing changed for this hook. Restoring anyway would
+    // overwrite a value the caller had just set with the initial one.
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: null } })
+    })
+
+    expect(applyValue).not.toHaveBeenCalled()
+  })
+
   test('removes its listener on unmount', () => {
     const { storage, removeListener } = createSpyStorage()
     const applyValue = jest.fn()
@@ -188,5 +245,72 @@ describe('use-storage-handler', () => {
     unmount()
 
     expect(removeListener).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the record of a hook s own writes', () => {
+  test('keeps only the most recent entries when no echo ever arrives', () => {
+    const pendingOwnWrites = createOwnWriteRecord()
+    const written = Array.from({ length: 12 }, (_, index) => `entry-${index}`)
+
+    for (const entry of written) recordOwnWrite(pendingOwnWrites, entry)
+
+    // A backend that reports nothing back leaves every record unmatched, and without a ceiling
+    // this grows by one string per write for as long as the hook is mounted. The oldest go: an
+    // echo is still owed for the newest.
+    expect(pendingOwnWrites.current).toEqual(written.slice(-8))
+  })
+
+  test('stops suppressing a record the backend has already reported past', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+    const pendingOwnWrites = createOwnWriteRecord()
+    const firstEntry = JSON.stringify({ [itemKey]: 'first' })
+    const secondEntry = JSON.stringify({ [itemKey]: 'second' })
+
+    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
+
+    recordOwnWrite(pendingOwnWrites, firstEntry)
+    recordOwnWrite(pendingOwnWrites, secondEntry)
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: secondEntry } })
+    })
+
+    expect(applyValue).not.toHaveBeenCalled()
+
+    // A backend reports in the order it applied, so the first write's echo is never coming. Its
+    // record has to go with the second one's, or these bytes stay suppressed for good and a real
+    // write carrying them is dropped.
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: firstEntry } })
+    })
+
+    expect(applyValue).toHaveBeenCalledWith('first')
+  })
+
+  test('suppresses one echo for each record holding the same entry', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+    const pendingOwnWrites = createOwnWriteRecord()
+    const entry = JSON.stringify({ [itemKey]: 'unchanged' })
+
+    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
+
+    // Two writes that happen to store the same bytes are owed two echoes. Matching the last
+    // record rather than the first drops both on the first echo, and the second is then read as
+    // somebody else's write.
+    recordOwnWrite(pendingOwnWrites, entry)
+    recordOwnWrite(pendingOwnWrites, entry)
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: entry } })
+    })
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: null, newValue: entry } })
+    })
+
+    expect(applyValue).not.toHaveBeenCalled()
   })
 })
