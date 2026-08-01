@@ -103,12 +103,8 @@ export function recordOwnWrite(pendingOwnWrites: React.RefObject<string[]>, item
  * hook writing the same bytes is suppressed along with it, and nothing is lost:
  * it would have replaced a value with an equal one.
  */
-function consumeOwnWriteEcho(change: StorageChange, pendingOwnWrites: React.RefObject<string[]>): boolean {
-  // A removal carries no entry to match, and matching one against `undefined`
-  // would make an empty record answer for it.
-  if (typeof change.newValue !== 'string') return false
-
-  const matched = pendingOwnWrites.current.indexOf(change.newValue)
+function consumeOwnWriteEcho(entry: string, pendingOwnWrites: React.RefObject<string[]>): boolean {
+  const matched = pendingOwnWrites.current.indexOf(entry)
 
   if (matched === -1) return false
 
@@ -132,12 +128,15 @@ function createStorageHandler<T>(
     for (const [key, change] of Object.entries(changes)) {
       if (key !== storageKey) continue
 
-      if (consumeOwnWriteEcho(change, pendingOwnWrites)) continue
-
+      // Ahead of the echo check, which needs an entry to match and a removal has
+      // none. A removal is never one of this hook's own writes anyway: only the
+      // entries it stores are recorded.
       if (change.newValue === null || change.newValue === undefined) {
         applyRemoval<T>(change, itemKey, applyValue, latestInitialValue)
         continue
       }
+
+      if (consumeOwnWriteEcho(change.newValue, pendingOwnWrites)) continue
 
       const newValue = readStoredValue<T>(itemKey, change.newValue)
 
