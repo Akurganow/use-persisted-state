@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import useStorageHandler, { recordOwnWrite } from './utils/use-storage-handler'
+import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
@@ -27,7 +27,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
     return removal
   }
 
-  const commitEntry = <T>(key: string, newValue: T, pendingOwnWrites: React.RefObject<string[]>): Promise<void> => {
+  const commitEntry = <T>(key: string, newValue: T): Promise<void> => {
     const write = entryWrites.then(async () => {
       const persistedItem = await storage.get(safeStorageKey)
       let newItem: string
@@ -38,8 +38,6 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
         // A write replaces the whole entry, so an unreadable one is skipped rather than rebuilt without other keys.
         return
       }
-
-      recordOwnWrite(pendingOwnWrites, newItem)
 
       await storage.set({ [safeStorageKey]: newItem })
     })
@@ -66,15 +64,13 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       setState(value)
     }, [])
 
-    const pendingOwnWrites = useRef<string[]>([])
-
     const setPersistedState = useCallback(
       async (newState: React.SetStateAction<T>): Promise<void> => {
         const newValue = getNewValue<T>(newState, latestValue.current)
 
         applyValue(newValue)
 
-        await commitEntry<T>(key, newValue, pendingOwnWrites)
+        await commitEntry<T>(key, newValue)
       },
       [key, applyValue],
     )
@@ -83,7 +79,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
     const mountInitialValue = useRef(initialValue)
 
     // Subscribed before the load: effects run in declaration order, and reading first would lose writes in between.
-    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrites)
+    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue)
 
     useEffect(() => {
       // Separate from `hasAppliedValue`: only this closure knows whether its own load is still current.

@@ -42,49 +42,20 @@ function applyRemoval<T>(
   applyValue(initialValue)
 }
 
-// A list, not one slot: a write may still be awaiting its echo when the next one starts.
-// Capped, because a backend that never reports back leaves every record unmatched.
-const MAX_PENDING_OWN_WRITES = 8
-
-/** Records an entry before it is written, because a backend may report the change before the write settles. */
-export function recordOwnWrite(pendingOwnWrites: React.RefObject<string[]>, item: string): void {
-  const pending = pendingOwnWrites.current
-
-  if (pending.length >= MAX_PENDING_OWN_WRITES) pending.shift()
-
-  pending.push(item)
-}
-
-// Applying a hook's own echo would re-decode the entry and re-render for a value it already holds.
-function consumeOwnWriteEcho(entry: string, pendingOwnWrites: React.RefObject<string[]>): boolean {
-  const matched = pendingOwnWrites.current.indexOf(entry)
-
-  if (matched === -1) return false
-
-  // A backend reports writes in the order it took them, so a record still unmatched has no echo left.
-  pendingOwnWrites.current.splice(0, matched + 1)
-
-  return true
-}
-
 function createStorageHandler<T>(
   itemKey: string,
   storageKey: string,
   applyValue: (value: T) => void,
   latestInitialValue: React.RefObject<T | (() => T)>,
-  pendingOwnWrites: React.RefObject<string[]>,
 ) {
   return (changes: { [key: string]: StorageChange }): void => {
     for (const [key, change] of Object.entries(changes)) {
       if (key !== storageKey) continue
 
-      // Ahead of the echo check, which needs an entry to match and a removal has none.
       if (change.newValue === null || change.newValue === undefined) {
         applyRemoval<T>(change, itemKey, applyValue, latestInitialValue)
         continue
       }
-
-      if (consumeOwnWriteEcho(change.newValue, pendingOwnWrites)) continue
 
       const newValue = readStoredValue<T>(itemKey, change.newValue)
 
@@ -99,7 +70,6 @@ export default function useStorageHandler<T>(
   applyValue: (value: T) => void,
   storage: AsyncStorage | Storage,
   initialValue: T | (() => T),
-  pendingOwnWrites: React.RefObject<string[]>,
 ): void {
   // A ref, not a dependency: an inline initial value changes identity every render and would churn it.
   const latestInitialValue = useRef(initialValue)
@@ -107,7 +77,7 @@ export default function useStorageHandler<T>(
   latestInitialValue.current = initialValue
 
   useEffect(() => {
-    const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, latestInitialValue, pendingOwnWrites)
+    const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, latestInitialValue)
 
     storage.onChanged.addListener(handleStorage)
 
@@ -116,5 +86,5 @@ export default function useStorageHandler<T>(
         storage.onChanged.removeListener(handleStorage)
       }
     }
-  }, [key, storage.onChanged, storageKey, applyValue, pendingOwnWrites])
+  }, [key, storage.onChanged, storageKey, applyValue])
 }
