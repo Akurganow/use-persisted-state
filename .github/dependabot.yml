@@ -43,6 +43,14 @@ updates:
           - release-it
           - '@release-it/*'
           - dotenv-cli
+    ignore:
+      # ts-jest@29.4.12 declares `"typescript": ">=4.3 <7"`, so the tool the whole
+      # test suite runs on rules the 7 line out itself: taking it would need
+      # `--legacy-peer-deps` or an `overrides` entry, and neither is allowed here.
+      # Remove this once ts-jest widens that range.
+      - dependency-name: typescript
+        update-types:
+          - 'version-update:semver-major'
     open-pull-requests-limit: 5
     commit-message:
       # Conventional commits drive the released version, so dependency updates
