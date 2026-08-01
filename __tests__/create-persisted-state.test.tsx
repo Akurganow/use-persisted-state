@@ -183,7 +183,7 @@ describe('clearing', () => {
   })
 })
 
-describe('own writes', () => {
+describe('storage round-trips', () => {
   const entryKey = 'persisted_state_hook:echo'
   const [usePersistedState] = createPersistedState('echo', storage)
 
@@ -192,7 +192,7 @@ describe('own writes', () => {
     localStorage.clear()
   })
 
-  test('keeps the value it was given rather than the storage round-trip of it', () => {
+  test('applies the storage event emitted by its own write', () => {
     const { result } = renderHook(() => usePersistedState<{ count: number }>('own', { count: 0 }))
     const applied = { count: 1 }
 
@@ -200,10 +200,8 @@ describe('own writes', () => {
       result.current[1](applied)
     })
 
-    // The adapter reports the write back, and decoding it yields an equal object
-    // with a new identity, so the caller is handed something it did not set and
-    // re-renders for it.
-    expect(result.current[0]).toBe(applied)
+    expect(result.current[0]).toEqual(applied)
+    expect(result.current[0]).not.toBe(applied)
   })
 
   test('still applies a write made by another hook on the same key', () => {
@@ -217,14 +215,14 @@ describe('own writes', () => {
     expect(reader.current[0]).toBe('from the writer')
   })
 
-  test('consumes the suppression on the echo it was recorded for', () => {
+  test('applies a later event even when its entry matches an earlier write', () => {
     const { result } = renderHook(() => usePersistedState('sticky', 'initial'))
 
     act(() => {
       result.current[1]('first')
     })
 
-    const ownEntry = localStorage.__STORE__[entryKey]
+    const earlierEntry = localStorage.__STORE__[entryKey]
 
     act(() => {
       storage.set({ [entryKey]: JSON.stringify({ sticky: 'second' }) })
@@ -232,10 +230,8 @@ describe('own writes', () => {
 
     expect(result.current[0]).toBe('second')
 
-    // The same bytes arriving again are a genuine external write, not the echo
-    // the suppression was recorded for.
     act(() => {
-      storage.set({ [entryKey]: ownEntry })
+      storage.set({ [entryKey]: earlierEntry })
     })
 
     expect(result.current[0]).toBe('first')
