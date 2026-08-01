@@ -75,8 +75,12 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       [key, applyValue],
     )
 
-    // The first render's initial value: reloading on a later identity would re-run the effect forever.
-    const mountInitialValue = useRef(initialValue)
+    // State binds the fallback to a committed key; same-key rerenders retain useState semantics.
+    const [keyInitialValue, setKeyInitialValue] = useState({ key, value: initialValue })
+
+    if (keyInitialValue.key !== key) {
+      setKeyInitialValue({ key, value: initialValue })
+    }
 
     // Subscribed before the load: effects run in declaration order, and reading first would lose writes in between.
     useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue)
@@ -93,7 +97,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
 
           if (isCancelled || hasAppliedValue.current) return
 
-          applyValue(getPersistedValue<T>(key, mountInitialValue.current, persist[safeStorageKey]))
+          applyValue(getPersistedValue<T>(key, keyInitialValue.value, persist[safeStorageKey]))
         } catch (err) {
           // Nothing awaits this load, so an unclaimed rejection would surface as an uncaught error.
           console.error("use-persisted-state: Can't read value from storage", err)
@@ -105,7 +109,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       return () => {
         isCancelled = true
       }
-    }, [key, applyValue])
+    }, [key, keyInitialValue, applyValue])
 
     return [state, setPersistedState]
   }

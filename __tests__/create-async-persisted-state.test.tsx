@@ -1,7 +1,7 @@
 import { createAsyncPersistedState } from '../src'
 import { local as storage } from '../src/storages/browser-storage'
-import { waitFor } from '@testing-library/react'
-import { renderHook, cleanup, act } from '@testing-library/react'
+import React, { Suspense, startTransition } from 'react'
+import { renderHook, cleanup, act, render, screen, waitFor } from '@testing-library/react'
 import type { AsyncStorage, StorageChange, StorageChangeListener } from '../src/@types/storage'
 
 const [usePersistedState, clear] = createAsyncPersistedState('test', storage)
@@ -211,6 +211,66 @@ describe('mount order', () => {
 })
 
 describe('changing key', () => {
+  test('keeps the committed key initial value while a new key render is suspended', async () => {
+    const { asyncStorage, releaseReads } = createFakeAsyncStorage(
+      { 'persisted_state_hook:suspendedKey': JSON.stringify({ unrelated: 'persisted' }) },
+      1,
+    )
+    const [useKeyedPersistedState] = createAsyncPersistedState('suspendedKey', asyncStorage)
+    let isSecondRenderPending = true
+    let releaseSecondRender: DeferredResolve = () => undefined
+    const secondRenderPending = new Promise<void>(resolve => {
+      releaseSecondRender = () => {
+        isSecondRenderPending = false
+        resolve()
+      }
+    })
+    const KeyedState = ({ itemKey, initialValue }: { itemKey: string; initialValue: string }) => {
+      const [value] = useKeyedPersistedState(itemKey, initialValue)
+
+      if (itemKey === 'second' && isSecondRenderPending) throw secondRenderPending
+
+      return <div role="status">{`${itemKey}:${value}`}</div>
+    }
+    const { rerender } = render(
+      <Suspense fallback="loading">
+        <KeyedState itemKey="first" initialValue="initial-first" />
+      </Suspense>,
+    )
+
+    expect(screen.getByRole('status').textContent).toBe('first:initial-first')
+
+    act(() => {
+      startTransition(() => {
+        rerender(
+          <Suspense fallback="loading">
+            <KeyedState itemKey="second" initialValue="initial-second" />
+          </Suspense>,
+        )
+      })
+    })
+
+    expect(screen.getByRole('status').textContent).toBe('first:initial-first')
+
+    try {
+      await act(async () => {
+        releaseReads()
+      })
+
+      expect(screen.getByRole('status').textContent).toBe('first:initial-first')
+
+      await act(async () => {
+        await asyncStorage.remove('persisted_state_hook:suspendedKey')
+      })
+
+      expect(screen.getByRole('status').textContent).toBe('first:initial-first')
+    } finally {
+      await act(async () => {
+        releaseSecondRender()
+      })
+    }
+  })
+
   test('ignores a load left in flight by the previous key', async () => {
     const { asyncStorage, releaseReads } = createFakeAsyncStorage(
       { 'persisted_state_hook:keys': JSON.stringify({ first: 'value-first', second: 'value-second' }) },
@@ -256,6 +316,25 @@ describe('changing key', () => {
     await act(async () => {})
 
     expect(result.current[0]).toBe('value-second')
+  })
+
+  test('uses the new key initial value when no value is persisted', async () => {
+    const { asyncStorage } = createFakeAsyncStorage({
+      'persisted_state_hook:keyInitialValues': JSON.stringify({ first: 'persisted-first' }),
+    })
+    const [useKeyedPersistedState] = createAsyncPersistedState('keyInitialValues', asyncStorage)
+    const { result, rerender } = renderHook(
+      ({ itemKey, initialValue }) => useKeyedPersistedState(itemKey, initialValue),
+      {
+        initialProps: { itemKey: 'first', initialValue: 'initial-first' },
+      },
+    )
+
+    await waitFor(() => expect(result.current[0]).toBe('persisted-first'))
+
+    rerender({ itemKey: 'second', initialValue: 'initial-second' })
+
+    await waitFor(() => expect(result.current[0]).toBe('initial-second'))
   })
 })
 
