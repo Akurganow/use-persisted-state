@@ -50,43 +50,50 @@ describe('use-storage-handler', () => {
     expect(removeListener).not.toHaveBeenCalled()
   })
 
-  test('restores the initialValue of the latest render when the entry is removed', () => {
+  test('evaluates the functional initial value from the latest render only when the entry is removed', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
+    const firstInitialValue = jest.fn(() => 'first')
+    const latestInitialValue = jest.fn(() => 'second')
 
     const { rerender } = renderHook(
       ({ initialValue }) => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, initialValue),
-      { initialProps: { initialValue: 'first' } },
+      { initialProps: { initialValue: firstInitialValue } },
     )
 
-    rerender({ initialValue: 'second' })
+    rerender({ initialValue: latestInitialValue })
+
+    expect(latestInitialValue).not.toHaveBeenCalled()
+    expect(firstInitialValue).not.toHaveBeenCalled()
 
     act(() => {
       fire({ [storageKey]: { oldValue: JSON.stringify({ [itemKey]: 'stored' }), newValue: null } })
     })
 
-    // The key-change path reads the initialValue of the render it happens on, so
-    // a removal has to read the same one, or one hook answers "what is the
-    // initial value?" two different ways depending on which path asked.
+    expect(firstInitialValue).not.toHaveBeenCalled()
+    expect(latestInitialValue).toHaveBeenCalledTimes(1)
+    expect(applyValue).toHaveBeenCalledTimes(1)
     expect(applyValue).toHaveBeenCalledWith('second')
   })
 
   describe('removal events', () => {
     test.each([
-      ['an omitted old value', undefined],
-      ['an equal old value', JSON.stringify({ [itemKey]: 'initial' })],
-      ['unreadable old bytes', 'not json'],
-    ])('restores the initial value for %s', (_name, oldValue) => {
+      ['an omitted new value', { oldValue: JSON.stringify({ [itemKey]: 'stored' }) }],
+      ['an omitted old value', { newValue: null }],
+      ['an equal old value', { oldValue: JSON.stringify({ [itemKey]: 'initial' }), newValue: null }],
+      ['unreadable old bytes', { oldValue: 'not json', newValue: null }],
+    ] satisfies [string, StorageChange][])('restores the initial value for %s', (_name, change) => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
+
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial'))
+
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
       const parse = jest.spyOn(JSON, 'parse')
 
       try {
-        renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial'))
-
         act(() => {
-          fire({ [storageKey]: { oldValue, newValue: null } })
+          fire({ [storageKey]: change })
         })
 
         expect(applyValue).toHaveBeenCalledWith('initial')
