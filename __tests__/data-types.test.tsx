@@ -2,7 +2,46 @@ import createPersistedState from '../src'
 import { renderHook, cleanup, act } from '@testing-library/react'
 import storage from '../src/storages/local-storage'
 
+const entryKey = 'persisted_state_hook:dataTypes'
 const [usePersistedState, clear] = createPersistedState('dataTypes', storage)
+
+function readStoredEntry(): unknown {
+  const entry = localStorage.__STORE__[entryKey]
+
+  return entry === undefined ? undefined : JSON.parse(entry)
+}
+
+type PersistOutcome<T> = {
+  held: T
+  entry: unknown
+  readBack: T
+}
+
+/**
+ * Writes `value` through the hook and reports the three things persisting it
+ * produced: the value the writer holds, the entry that reached storage, and the
+ * value a hook that never saw the write reads back.
+ *
+ * Every case below asserts all three, because each catches a different failure
+ * and the held value catches none of them: a hook that writes nothing at all
+ * satisfies it, which is what left every `should persist` case here green with
+ * the write deleted from the setter. The entry shows what the type encodes to,
+ * and the read-back shows a fresh mount decoding it back rather than falling
+ * through to its initial value.
+ */
+function persistThroughStorage<T>(key: string, initialValue: T, value: T): PersistOutcome<T> {
+  const { result: writer } = renderHook(() => usePersistedState<T>(key, initialValue))
+
+  act(() => {
+    writer.current[1](value)
+  })
+
+  const held = writer.current[0]
+  const entry = readStoredEntry()
+  const { result: reader } = renderHook(() => usePersistedState<T>(key, initialValue))
+
+  return { held, entry, readBack: reader.current[0] }
+}
 
 describe('Data Types Persistence', () => {
   beforeEach(() => {
@@ -13,114 +52,93 @@ describe('Data Types Persistence', () => {
 
   describe('Number values', () => {
     test('should persist positive integer values', () => {
-      const { result } = renderHook(() => usePersistedState('numberKey', 0))
+      const persisted = persistThroughStorage('numberKey', 0, 42)
 
-      act(() => {
-        result.current[1](42)
-      })
-
-      expect(result.current[0]).toBe(42)
+      expect(persisted.held).toBe(42)
+      expect(persisted.entry).toEqual({ numberKey: 42 })
+      expect(persisted.readBack).toBe(42)
     })
 
     test('should persist negative integer values', () => {
-      const { result } = renderHook(() => usePersistedState('negativeKey', 0))
+      const persisted = persistThroughStorage('negativeKey', 0, -50)
 
-      act(() => {
-        result.current[1](-50)
-      })
-
-      expect(result.current[0]).toBe(-50)
+      expect(persisted.held).toBe(-50)
+      expect(persisted.entry).toEqual({ negativeKey: -50 })
+      expect(persisted.readBack).toBe(-50)
     })
 
     test('should persist decimal values', () => {
-      const { result } = renderHook(() => usePersistedState('decimalKey', 0))
+      const persisted = persistThroughStorage('decimalKey', 0, 3.14159)
 
-      act(() => {
-        result.current[1](3.14159)
-      })
-
-      expect(result.current[0]).toBe(3.14159)
+      expect(persisted.held).toBe(3.14159)
+      expect(persisted.entry).toEqual({ decimalKey: 3.14159 })
+      expect(persisted.readBack).toBe(3.14159)
     })
 
     test('should persist zero value', () => {
-      const { result } = renderHook(() => usePersistedState('zeroKey', 1))
+      const persisted = persistThroughStorage('zeroKey', 1, 0)
 
-      act(() => {
-        result.current[1](0)
-      })
-
-      expect(result.current[0]).toBe(0)
+      expect(persisted.held).toBe(0)
+      expect(persisted.entry).toEqual({ zeroKey: 0 })
+      expect(persisted.readBack).toBe(0)
     })
   })
 
   describe('Boolean values', () => {
     test('should persist true value', () => {
-      const { result } = renderHook(() => usePersistedState('boolTrueKey', false))
+      const persisted = persistThroughStorage('boolTrueKey', false, true)
 
-      act(() => {
-        result.current[1](true)
-      })
-
-      expect(result.current[0]).toBe(true)
+      expect(persisted.held).toBe(true)
+      expect(persisted.entry).toEqual({ boolTrueKey: true })
+      expect(persisted.readBack).toBe(true)
     })
 
     test('should persist false value', () => {
-      const { result } = renderHook(() => usePersistedState('boolFalseKey', true))
+      const persisted = persistThroughStorage('boolFalseKey', true, false)
 
-      act(() => {
-        result.current[1](false)
-      })
-
-      expect(result.current[0]).toBe(false)
+      expect(persisted.held).toBe(false)
+      expect(persisted.entry).toEqual({ boolFalseKey: false })
+      expect(persisted.readBack).toBe(false)
     })
   })
 
   describe('Array values', () => {
     test('should persist empty array', () => {
-      const initialArray: any[] = []
-      const { result } = renderHook(() => usePersistedState<any[]>('emptyArrayKey', initialArray))
+      const persisted = persistThroughStorage<unknown[]>('emptyArrayKey', [], [])
 
-      act(() => {
-        result.current[1]([])
-      })
-
-      expect(result.current[0]).toEqual([])
+      expect(persisted.held).toEqual([])
+      // The one case where the read-back cannot tell persistence from a hook that
+      // stored nothing: an empty array is also the initial value, so the entry is
+      // the whole of the evidence.
+      expect(persisted.entry).toEqual({ emptyArrayKey: [] })
+      expect(persisted.readBack).toEqual([])
     })
 
     test('should persist array with mixed types', () => {
-      const initialArray: any[] = []
-      const { result } = renderHook(() => usePersistedState<any[]>('mixedArrayKey', initialArray))
-      const testArray = [1, 'string', true, { nested: 'object' }, null]
+      const mixedArray = [1, 'string', true, { nested: 'object' }, null]
+      const persisted = persistThroughStorage<unknown[]>('mixedArrayKey', [], mixedArray)
 
-      act(() => {
-        result.current[1](testArray)
-      })
-
-      expect(result.current[0]).toEqual(testArray)
+      expect(persisted.held).toEqual(mixedArray)
+      expect(persisted.entry).toEqual({ mixedArrayKey: mixedArray })
+      expect(persisted.readBack).toEqual(mixedArray)
     })
 
     test('should persist array of numbers', () => {
-      const initialArray: number[] = []
-      const { result } = renderHook(() => usePersistedState<number[]>('numberArrayKey', initialArray))
       const numberArray = [1, 2, 3, 4, 5]
+      const persisted = persistThroughStorage<number[]>('numberArrayKey', [], numberArray)
 
-      act(() => {
-        result.current[1](numberArray)
-      })
-
-      expect(result.current[0]).toEqual(numberArray)
+      expect(persisted.held).toEqual(numberArray)
+      expect(persisted.entry).toEqual({ numberArrayKey: numberArray })
+      expect(persisted.readBack).toEqual(numberArray)
     })
 
     test('should persist array of strings', () => {
-      const initialArray: string[] = []
-      const { result } = renderHook(() => usePersistedState<string[]>('stringArrayKey', initialArray))
       const stringArray = ['hello', 'world', 'test']
+      const persisted = persistThroughStorage<string[]>('stringArrayKey', [], stringArray)
 
-      act(() => {
-        result.current[1](stringArray)
-      })
-
-      expect(result.current[0]).toEqual(stringArray)
+      expect(persisted.held).toEqual(stringArray)
+      expect(persisted.entry).toEqual({ stringArrayKey: stringArray })
+      expect(persisted.readBack).toEqual(stringArray)
     })
   })
 
@@ -132,8 +150,9 @@ describe('Data Types Persistence', () => {
         result.current[1](null)
       })
 
-      // null is a value the user set, not an absence: it must not be
-      // replaced by the initial value on read-back.
+      // The in-memory half only: null is a value the caller set, not an absence,
+      // so the hook must not swap it for the initial value. What the write leaves
+      // in storage and what a later reader sees are the two cases below.
       expect(result.current[0]).toBeNull()
     })
 
@@ -146,7 +165,7 @@ describe('Data Types Persistence', () => {
 
       // The full round trip: the setter writes null into storage and the
       // read path must return it instead of falling back to the initial value.
-      expect(localStorage.__STORE__['persisted_state_hook:dataTypes']).toBe(JSON.stringify({ nullRoundTripKey: null }))
+      expect(localStorage.__STORE__[entryKey]).toBe(JSON.stringify({ nullRoundTripKey: null }))
       expect(result.current[0]).toBeNull()
     })
 
@@ -210,27 +229,22 @@ describe('Data Types Persistence', () => {
       // What the write leaves behind, which is what separates this from the case
       // above: JSON drops an undefined member, so the entry is written without
       // the key and a later mount finds nothing to restore.
-      expect(localStorage.__STORE__['persisted_state_hook:dataTypes']).toBe(JSON.stringify({}))
+      expect(localStorage.__STORE__[entryKey]).toBe(JSON.stringify({}))
       expect(result.current[0]).toBeUndefined()
     })
   })
 
   describe('Complex Object values', () => {
     test('should persist simple object', () => {
-      const initialObject = {}
-      const { result } = renderHook(() => usePersistedState<any>('simpleObjectKey', initialObject))
       const simpleObject = { key: 'value', number: 42 }
+      const persisted = persistThroughStorage<Record<string, unknown>>('simpleObjectKey', {}, simpleObject)
 
-      act(() => {
-        result.current[1](simpleObject)
-      })
-
-      expect(result.current[0]).toEqual(simpleObject)
+      expect(persisted.held).toEqual(simpleObject)
+      expect(persisted.entry).toEqual({ simpleObjectKey: simpleObject })
+      expect(persisted.readBack).toEqual(simpleObject)
     })
 
     test('should persist complex nested object', () => {
-      const initialObject = {}
-      const { result } = renderHook(() => usePersistedState<any>('complexObjectKey', initialObject))
       const complexObject = {
         string: 'value',
         number: 42,
@@ -244,28 +258,24 @@ describe('Data Types Persistence', () => {
         },
         nullValue: null,
       }
+      const persisted = persistThroughStorage<Record<string, unknown>>('complexObjectKey', {}, complexObject)
 
-      act(() => {
-        result.current[1](complexObject)
-      })
-
-      expect(result.current[0]).toEqual(complexObject)
+      expect(persisted.held).toEqual(complexObject)
+      expect(persisted.entry).toEqual({ complexObjectKey: complexObject })
+      expect(persisted.readBack).toEqual(complexObject)
     })
 
     test('should persist object with array properties', () => {
-      const initialObject = {}
-      const { result } = renderHook(() => usePersistedState<any>('objectWithArrayKey', initialObject))
       const objectWithArray = {
         numbers: [1, 2, 3],
         strings: ['a', 'b', 'c'],
         mixed: [1, 'two', true, null],
       }
+      const persisted = persistThroughStorage<Record<string, unknown>>('objectWithArrayKey', {}, objectWithArray)
 
-      act(() => {
-        result.current[1](objectWithArray)
-      })
-
-      expect(result.current[0]).toEqual(objectWithArray)
+      expect(persisted.held).toEqual(objectWithArray)
+      expect(persisted.entry).toEqual({ objectWithArrayKey: objectWithArray })
+      expect(persisted.readBack).toEqual(objectWithArray)
     })
   })
 
@@ -325,37 +335,38 @@ describe('Data Types Persistence', () => {
 
   describe('State persistence across hook instances', () => {
     test('should maintain state between different hook instances', () => {
-      const { result: result1 } = renderHook(() => usePersistedState<any>('persistenceKey', 'initial'))
+      const value = { test: 'value', number: 123 }
+      const persisted = persistThroughStorage<Record<string, unknown>>('persistenceKey', {}, value)
 
-      act(() => {
-        result1.current[1]({ test: 'value', number: 123 })
-      })
-
-      const { result: result2 } = renderHook(() => usePersistedState<any>('persistenceKey', 'initial'))
-
-      expect(result2.current[0]).toEqual({ test: 'value', number: 123 })
+      expect(persisted.entry).toEqual({ persistenceKey: value })
+      expect(persisted.readBack).toEqual(value)
     })
 
     test('should handle type changes in persisted state', () => {
-      const { result: result1 } = renderHook(() => usePersistedState<any>('typeChangeKey', 'initial'))
+      const { result } = renderHook(() => usePersistedState<unknown>('typeChangeKey', 'initial'))
 
       act(() => {
-        result1.current[1]('string value')
+        result.current[1]('string value')
       })
 
-      expect(result1.current[0]).toBe('string value')
+      expect(result.current[0]).toBe('string value')
+      expect(readStoredEntry()).toEqual({ typeChangeKey: 'string value' })
 
       act(() => {
-        result1.current[1](42)
+        result.current[1](42)
       })
 
-      expect(result1.current[0]).toBe(42)
+      expect(result.current[0]).toBe(42)
+      expect(readStoredEntry()).toEqual({ typeChangeKey: 42 })
 
       act(() => {
-        result1.current[1]({ changed: true })
+        result.current[1]({ changed: true })
       })
 
-      expect(result1.current[0]).toEqual({ changed: true })
+      expect(result.current[0]).toEqual({ changed: true })
+      // A replaced value has to leave nothing of the previous type behind, or a
+      // later reader decodes a value of a type the caller has already moved off.
+      expect(readStoredEntry()).toEqual({ typeChangeKey: { changed: true } })
     })
   })
 })
