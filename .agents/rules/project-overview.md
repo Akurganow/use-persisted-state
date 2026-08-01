@@ -44,9 +44,9 @@ Public API changes follow semver. A behaviour change that users can observe — 
 when it re-renders, what lands in storage — is breaking even when the type signature is untouched.
 
 Releases are cut automatically from every push to `main`, so merging a pull request is what publishes.
-The version comes from the commit messages alone: only `feat`, `fix`, `perf`, `revert` and a declared
-breaking change earn one, and a push carrying nothing else ends in "No new version to release" and a
-green run, so dependency updates cost a no-op rather than a version.
+The version comes from the commit messages alone: only `feat`, `feature`, `fix`, `perf`, `revert` and
+a declared breaking change earn one, and a push carrying nothing else ends in "No new version to
+release" and a green run, so dependency updates cost a no-op rather than a version.
 
 A release that does happen runs `release-it`, which bumps the version in `package.json`, writes
 `CHANGELOG.md`, commits both, tags the commit, pushes the branch and the tag back to `main`,
