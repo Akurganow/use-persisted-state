@@ -40,9 +40,11 @@ npm ci
 | `scripts/` | Package checks run by `npm run check:package` |
 
 The supported API is the package root and the documented storage adapter entry points. Legacy
-`./lib/*` and compatibility `./src/*` paths remain resolvable, so run the packaging checks before
-changing their modules. Observable behaviour — what the hook returns, when it re-renders, what lands
-in storage — affects consumers even when the type signature is untouched.
+`./lib/*` and compatibility `./src/*` paths remain resolvable. Before changing their modules,
+establish a baseline with `npm run build` followed by `npm run check:package`. After the change, run
+`npm run build` followed by `npm run check:package` again. Observable behaviour — what the hook
+returns, when it re-renders, what lands in storage — affects consumers even when the type signature
+is untouched.
 
 ## Development commands
 
