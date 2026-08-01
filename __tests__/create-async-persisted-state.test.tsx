@@ -14,7 +14,8 @@ type DeferredResolve = () => void
  * `deferredReads` holds back that many leading `get` calls until `releaseReads`
  * is called, which is how a slow backend is reproduced. Deferring only the
  * leading reads keeps the setter's own read fast, so a late load cannot be
- * masked by the change event the setter's write emits.
+ * masked by the change event the setter's write emits. `stored` is the backing
+ * object itself, so a case can read what actually reached storage.
  */
 function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferredReads = 0) {
   const stored: { [key: string]: string } = { ...entries }
@@ -85,7 +86,7 @@ function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferre
     }
   }
 
-  return { asyncStorage, get, releaseReads }
+  return { asyncStorage, get, releaseReads, stored }
 }
 
 describe('hook defined correctly', () => {
@@ -309,5 +310,58 @@ describe('a backend that fails the read', () => {
     // library's own message keeps React's logging from satisfying this.
     expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't read value from storage", expect.any(Error))
     expect(result.current[0]).toBe('initial')
+  })
+})
+
+describe('an entry the hook cannot read', () => {
+  const entryKey = 'persisted_state_hook:damagedAsync'
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    cleanup()
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  test('is left in storage rather than replaced by the next write', async () => {
+    // Truncated rather than garbage on purpose: alpha and beta are still legible in the bytes,
+    // and only a write that replaces them makes the loss permanent.
+    const damagedEntry = '{"alpha":"one","beta":"two"'
+    const { asyncStorage, stored } = createFakeAsyncStorage({ [entryKey]: damagedEntry })
+    const [useDamagedState] = createAsyncPersistedState('damagedAsync', asyncStorage)
+    const { result } = renderHook(() => useDamagedState('gamma', 'initial'))
+
+    await act(async () => {
+      await result.current[1]('three')
+    })
+
+    // The write is refused, not the update: the caller keeps what it set, and hears why it did
+    // not persist.
+    expect(result.current[0]).toBe('three')
+    expect(stored[entryKey]).toBe(damagedEntry)
+    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't write value to storage", expect.any(Error))
+  })
+
+  test('does not reject the setter, and lets the writes that follow land', async () => {
+    const { asyncStorage, stored } = createFakeAsyncStorage({ [entryKey]: '{"alpha":"one"' })
+    const [useDamagedState] = createAsyncPersistedState('damagedAsync', asyncStorage)
+    const { result } = renderHook(() => useDamagedState('gamma', 'initial'))
+
+    // A refusal that reached the caller as a rejection would be an unhandled rejection in every
+    // consumer that treats the setter as `useState`'s, and those end the process on Node 15+.
+    await act(async () => {
+      await result.current[1]('refused')
+    })
+
+    stored[entryKey] = JSON.stringify({ alpha: 'one' })
+
+    await act(async () => {
+      await result.current[1]('accepted')
+    })
+
+    expect(JSON.parse(stored[entryKey])).toEqual({ alpha: 'one', gamma: 'accepted' })
   })
 })

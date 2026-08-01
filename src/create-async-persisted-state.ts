@@ -49,7 +49,17 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
         applyValue(newValue)
 
         const persistedItem = await storage.get(safeStorageKey)
-        const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
+        let newItem: string
+
+        try {
+          newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
+        } catch {
+          // Refused, and reported where it was refused. A write replaces the whole
+          // entry, so an entry that cannot be read is one no write can be built on
+          // without dropping every other hook's key; skipping leaves the bytes for
+          // a repair to reach. The caller keeps what it set, unpersisted.
+          return
+        }
 
         // Recorded before the write, because the backend may report it before the
         // promise settles.

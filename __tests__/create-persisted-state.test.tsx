@@ -333,3 +333,63 @@ describe('storage access', () => {
     expect(get.mock.calls.length).toBe(readsAfterMount)
   })
 })
+
+describe('an entry the hook cannot read', () => {
+  const entryKey = 'persisted_state_hook:damaged'
+  const [usePersistedState] = createPersistedState('damaged', storage)
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    cleanup()
+    localStorage.clear()
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  test('is left in storage rather than replaced by the next write', () => {
+    // Truncated rather than garbage on purpose: alpha and beta are still legible in the bytes,
+    // and only a write that replaces them makes the loss permanent.
+    const damagedEntry = '{"alpha":"one","beta":"two"'
+
+    localStorage.setItem(entryKey, damagedEntry)
+
+    const { result } = renderHook(() => usePersistedState('gamma', 'initial'))
+
+    act(() => {
+      result.current[1]('three')
+    })
+
+    // The write is refused, not the update: the caller keeps what it set, and hears why it did
+    // not persist.
+    expect(result.current[0]).toBe('three')
+    expect(localStorage.__STORE__[entryKey]).toBe(damagedEntry)
+    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't write value to storage", expect.any(Error))
+  })
+
+  test('survives a write when it is a foreign JSON value', () => {
+    // A bare `null` did not merely lose the write, it threw out of the setter and into whatever
+    // called it, which for a consumer is a click handler. `act` absorbs a throw raised once an
+    // update is queued, so the case has to catch it itself: asserting only the storage would
+    // pass on the defect, whose crash leaves the entry untouched for the same reason a refusal
+    // does.
+    localStorage.setItem(entryKey, 'null')
+
+    const { result } = renderHook(() => usePersistedState('gamma', 'initial'))
+    let thrownBySetter: unknown = null
+
+    act(() => {
+      try {
+        result.current[1]('three')
+      } catch (err) {
+        thrownBySetter = err
+      }
+    })
+
+    expect(thrownBySetter).toBeNull()
+    expect(result.current[0]).toBe('three')
+    expect(localStorage.__STORE__[entryKey]).toBe('null')
+  })
+})

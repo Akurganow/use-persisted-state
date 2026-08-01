@@ -225,6 +225,14 @@ persisted_state_hook:example → {"count":0}
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
+### An entry the library cannot read
+
+A write replaces the factory's whole entry, so there is nothing safe to store when the entry already
+there will not parse, or parses to something that is not an object — another library writing under
+the same key, or a write cut short. The setter reports the failure on `console.error`, keeps the
+value you set in memory and writes nothing, leaving every other hook's key exactly where it is. The
+factory's `clear` removes the entry and lets writing resume.
+
 ### Values JSON cannot carry
 
 A few values do not survive `JSON.stringify`. This follows from the format rather than from a choice

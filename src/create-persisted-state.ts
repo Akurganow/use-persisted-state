@@ -58,7 +58,17 @@ export default function createPersistedState(storageKey: string, storage: Storag
         applyValue(newValue)
 
         const persistedItem = storage.get(safeStorageKey)[safeStorageKey]
-        const newItem = getNewItem<T>(key, persistedItem, newValue)
+        let newItem: string
+
+        try {
+          newItem = getNewItem<T>(key, persistedItem, newValue)
+        } catch {
+          // Refused, and reported where it was refused. A write replaces the whole
+          // entry, so an entry that cannot be read is one no write can be built on
+          // without dropping every other hook's key; skipping leaves the bytes for
+          // a repair to reach. The caller keeps what it set, unpersisted.
+          return
+        }
 
         pendingOwnWrite.current = newItem
 
