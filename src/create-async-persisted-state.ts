@@ -15,10 +15,6 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
 ): [PersistedState, () => Promise<void>] {
   const safeStorageKey = `persisted_state_hook:${storageKey}`
 
-  const clear = (): Promise<void> => {
-    return storage.remove(safeStorageKey)
-  }
-
   // Every hook this factory makes lives in one entry, and storing a value means
   // reading that entry, merging one key into it and writing all of it back, with
   // a suspension point on either side of the merge. Left to overlap, a second
@@ -27,6 +23,18 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
   // screen, and nothing reports the disagreement. It is the entry, not the hook,
   // that has to be taken one at a time, so the chain belongs to the factory.
   let entryWrites: Promise<unknown> = Promise.resolve()
+
+  const clear = (): Promise<void> => {
+    // Removing the entry changes it as much as storing does, so it takes its turn
+    // in the same chain. Outside it, a write already queued lands after the
+    // removal and brings back what was cleared - and "clear this data" is the one
+    // request that cannot be allowed to half happen.
+    const removal = entryWrites.then(() => storage.remove(safeStorageKey))
+
+    entryWrites = removal.catch(() => undefined)
+
+    return removal
+  }
 
   const commitEntry = <T>(key: string, newValue: T, pendingOwnWrites: React.RefObject<string[]>): Promise<void> => {
     const write = entryWrites.then(async () => {
