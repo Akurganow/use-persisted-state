@@ -45,12 +45,9 @@ Never leak a backend's quirks inward, and never widen a core type to accommodate
 
 ### Clean code
 
-- Functions do one thing and are small enough to read at once.
-- No surprises: a function named as a query does not mutate anything. **A predicate must have no side
-  effects.** `isAsyncStorage` is the worked example: it once detected async support by *calling*
-  `get('')`, `set({})` and `remove('')`, so merely asking a question wrote to the user's storage. It
-  now answers from the declared members wherever it can, never invokes `set` or `remove`, and falls
-  back to a single `get('')` — the one probe that leaves the inspected storage as it found it.
+- Give each function a coherent responsibility; split it when that reduces reasoning and change cost.
+- A predicate must not mutate user storage. `isAsyncStorage` uses declared capabilities first and,
+  only when they cannot decide, performs one observable `get('')` read without writing or removing.
 - Prefer clear names over comments; when a comment is needed, it explains why.
-- No flag parameters that make a function do two different things.
-- Fail loudly and early rather than continuing with a broken value.
+- Derive error handling from the public contract: propagate unexpected failures and handle expected
+  absence or invalid persisted data deliberately.
