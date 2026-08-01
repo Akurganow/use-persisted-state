@@ -41,6 +41,7 @@ module.exports = {
     'before:init': ['npm run lint', 'npm run typecheck', 'npm test', 'npm run build', 'npm run check:package'],
 
     // Publish only after the release commit and tag reach origin/main; the script makes retries safe.
+    // This hook runs only while github.release remains enabled.
     'before:github:release': 'node scripts/publish-release.mjs',
 
     // release-it resolves these placeholders after this file loads.
