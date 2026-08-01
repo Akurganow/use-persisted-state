@@ -249,9 +249,9 @@ tells a `null` you stored apart from a `null` that JSON produced.
   keeps `undefined` in memory, as `useState` would, and other components already mounted on that key
   see no change and keep the value they hold. After a remount or a reload the key is absent, so the
   initial value comes back.
-- **`NaN`, `Infinity`, `-Infinity`** — these are written as `null`. The component that set the value
-  keeps it until it remounts; every other component on that key reads back `null`, as does any
-  reader after a reload.
+- **`NaN`, `Infinity`, `-Infinity`** — these are written as `null`. A storage change reported by the
+  backend applies that `null` to every listening component, including the writer. Any reader after
+  a reload also reads back `null`.
 
 ## Contributing
 
