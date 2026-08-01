@@ -7,22 +7,9 @@ on:
   push:
     branches:
       - main
-  # Kept beside the automatic trigger for what a push cannot express: forcing an increment the
-  # history understates, and rehearsing the pipeline with --dry-run. It is also the only way to
-  # retry a release whose commits already sit on main, after an outage at npm or GitHub, without
-  # inventing an empty commit to push.
+  # Allows dry runs and retrying a release after an npm or GitHub outage.
   workflow_dispatch:
     inputs:
-      increment:
-        description: 'Version increment. Leave as "auto" to derive it from conventional commits.'
-        required: false
-        type: choice
-        options:
-          - auto
-          - patch
-          - minor
-          - major
-        default: auto
       # Retry the tagged version because OIDC publishing is available only in this workflow.
       retry-current:
         description: 'Finish the release for the version already tagged, instead of deriving a new one.'
@@ -78,20 +65,14 @@ jobs:
         # NODE_AUTH_TOKEN would make npm prefer legacy authentication over OIDC.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INCREMENT: ${{ inputs.increment }}
           RETRY_CURRENT: ${{ inputs.retry-current }}
           DRY_RUN: ${{ inputs.dry-run }}
         run: |
           args=()
 
-          # Retrying targets the version already tagged, so an increment would contradict it.
-          # The inputs are all empty on any event other than workflow_dispatch, and testing
-          # against 'auto' alone would hand release-it an empty positional argument, which is
-          # why the emptiness is checked first.
+          # Retrying targets the version already tagged rather than deriving a new one.
           if [ "$RETRY_CURRENT" = 'true' ]; then
             args+=('--no-increment')
-          elif [ -n "$INCREMENT" ] && [ "$INCREMENT" != 'auto' ]; then
-            args+=("$INCREMENT")
           fi
 
           if [ "$DRY_RUN" = 'true' ]; then
