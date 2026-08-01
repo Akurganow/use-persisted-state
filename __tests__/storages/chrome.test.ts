@@ -37,15 +37,15 @@ describe('chrome-storage', function () {
           expect(storageMethod).toBeDefined()
         })
 
+        // Passing a callback is what opts out of chrome's promise form, and the
+        // two cannot be combined, so the argument list is the contract: a
+        // second argument here would mean failures stop being rejections.
         test(`${type}.${method}`, function () {
           // @ts-ignore
           storageMethod(storageMethodsTestParams[method])
 
           expect(chrome.storage[type][method]).toHaveBeenCalledTimes(1)
-          expect(chrome.storage[type][method]).toHaveBeenCalledWith(
-            storageMethodsTestParams[method],
-            expect.any(Function),
-          )
+          expect(chrome.storage[type][method]).toHaveBeenCalledWith(storageMethodsTestParams[method])
         })
       }
 
