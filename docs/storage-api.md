@@ -77,11 +77,17 @@ reported without an `oldValue` is ignored.
   adapters do this.
 - **One entry per factory.** Each `createPersistedState(name, storage)` factory reads and writes a
   single storage key, `persisted_state_hook:<name>`, containing a JSON object with one property per
-  hook key. A write replaces all of it, so on an asynchronous storage the library takes one write on
-  that key at a time: your `set` is never called for an entry merged from a snapshot another write
-  has since replaced. An entry the library cannot read — one that will not parse, or that is not a
-  JSON object — is left untouched instead: the write is reported and skipped, so a foreign entry
-  under the same key is never overwritten.
+  hook key. A write replaces all of it, so on an asynchronous storage the library takes one change
+  to that key at a time — writes and `clear` alike: your `set` is never called for an entry merged
+  from a snapshot another write has since replaced, and a removal is never undone by a write that
+  was already queued behind it. An entry the library cannot read — a string that will not parse, or
+  one that parses to something other than a JSON object — is left untouched instead: the write is
+  reported and skipped.
+- **The refusal reaches only as far as `get` reports.** An adapter that narrows a value to absent
+  hides it from that check, and the next write replaces it. This is what the bundled extension
+  adapters do with the non-string values their backend allows, so a foreign object under a
+  `persisted_state_hook:` key in extension storage is overwritten rather than preserved. An adapter
+  that wants a foreign value protected has to return it from `get` as the string it is.
 - **Detection reads, and never writes.** The default export tells `Storage` and `AsyncStorage` apart
   from the shape of your methods first: a `get` declared `async` settles it without any call. Only
   when that does not hold does it call `get('')` once, as a method of your storage, and check whether
