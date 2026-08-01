@@ -19,14 +19,10 @@ export default function createPersistedState(storageKey: string, storage: Storag
     getPersistedValue<T>(key, initialValue, storage.get(safeStorageKey)[safeStorageKey])
 
   const usePersistedState = <T>(key: string, initialValue: T): UsePersistedState<T> => {
-    // Reading through the initializer keeps the storage out of the render path:
-    // the hook runs on every render of every consuming component, so a re-read is
-    // only warranted when the key it is asked for actually changes.
+    // Read through the initializer: the hook runs on every render, so storage stays out of the render path.
     const [state, setState] = useState<T>(() => readPersisted(key, initialValue))
 
-    // The setter must resolve updater functions against the last value applied,
-    // not against the one captured by the render that created it. Reading the
-    // render closure collapses updates batched into a single event.
+    // Updater functions must resolve against the last applied value, not the render closure's.
     const latestValue = useRef(state)
 
     const applyValue = useCallback((value: T): void => {
@@ -35,11 +31,7 @@ export default function createPersistedState(storageKey: string, storage: Storag
       setState(value)
     }, [])
 
-    // A mounted hook handed a different key has to show that key's value before
-    // anything can be written, or the next update stores the previous key's value
-    // under the new key and destroys what was there. Adjusting during render ties
-    // the re-read to the change itself, where an effect would cost a read and a
-    // second render on every mount as well.
+    // A new key must be read before anything is written, or the next update stores the old key's value under it.
     const renderedKey = useRef(key)
 
     if (renderedKey.current !== key) {
@@ -48,7 +40,6 @@ export default function createPersistedState(storageKey: string, storage: Storag
       applyValue(readPersisted(key, initialValue))
     }
 
-    // The entries this hook has written and not yet seen reported back.
     const pendingOwnWrites = useRef<string[]>([])
 
     const setPersistedState = useCallback(
@@ -63,10 +54,7 @@ export default function createPersistedState(storageKey: string, storage: Storag
         try {
           newItem = getNewItem<T>(key, persistedItem, newValue)
         } catch {
-          // Refused, and reported where it was refused. A write replaces the whole
-          // entry, so an entry that cannot be read is one no write can be built on
-          // without dropping every other hook's key; skipping leaves the bytes for
-          // a repair to reach. The caller keeps what it set, unpersisted.
+          // A write replaces the whole entry, so an unreadable one is skipped rather than rebuilt without other keys.
           return
         }
 

@@ -7,21 +7,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   registry.fire(toStorageChanges(changes), area)
 })
 
-/**
- * Passing no callback is what selects chrome.storage's promise form, and the
- * two cannot be combined. It is the only form that reports a failure the caller
- * can act on: the callback form leaves the reason in `runtime.lastError` and
- * invokes the callback with no arguments, giving a wrapping promise nothing to
- * settle on.
- *
- * Each call goes through `storage` rather than a torn-off method reference. A
- * `StorageArea` method invoked without its receiver throws `Illegal
- * invocation`, unlike its firefox counterpart.
- *
- * `get` stays declared `async` so that asking whether this storage is
- * asynchronous can be answered from the function itself; probing it by calling
- * would cost a round trip to the extension process on every hook creation.
- */
+// Passing no callback selects the promise form; the callback form leaves failures in `runtime.lastError`.
+// Called through `storage`: a torn-off `StorageArea` method throws `Illegal invocation`, unlike firefox's.
+// `get` stays `async` so asking whether this storage is asynchronous costs no round trip to the extension.
 const createStorage = (storage: chrome.storage.StorageArea, area: Area): AsyncStorage => ({
   get: async keys => toStoredItems(await storage.get(keys)),
   set: items => storage.set(items),
