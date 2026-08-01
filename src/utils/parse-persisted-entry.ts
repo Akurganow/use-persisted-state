@@ -1,5 +1,11 @@
 import { isObject } from '@plq/is'
 
+/**
+ * A parsed shared entry. Copy one only by spread or a computed key: `Object.assign`
+ * and plain assignment reach the `__proto__` accessor on `Object.prototype`, which
+ * drops that hook key silently and, for an object value, reparents the entry so
+ * that every later lookup on it inherits keys nobody stored.
+ */
 export type PersistedEntry = Record<string, unknown>
 
 export function hasOwnPersistedKey(entry: PersistedEntry, key: string): boolean {
@@ -14,7 +20,8 @@ export default function parsePersistedEntry(entry: string | undefined): Persiste
   const parsed: unknown = JSON.parse(entry)
 
   if (!isObject(parsed)) {
-    throw new TypeError('the stored entry is not an object of hook keys')
+    // Prefixed because this one reaches consumer code: a write propagates it out of the setter.
+    throw new TypeError('use-persisted-state: the stored entry is not an object of hook keys')
   }
 
   return parsed

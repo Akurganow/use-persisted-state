@@ -46,6 +46,8 @@ function createStorageHandler<T>(
       if (key !== storageKey) continue
 
       if (change.newValue === null || change.newValue === undefined) {
+        // Applied every time: the listener cannot prove the current React state
+        // already matches, so comparing `oldValue` would skip resets that are needed.
         applyInitialValue(applyValue, latestInitialValue)
         continue
       }

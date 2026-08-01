@@ -196,6 +196,21 @@ describe('use-storage-handler', () => {
     expect(applyValue).toHaveBeenCalledWith('stored')
   })
 
+  // `constructor` is an inherited data property and survives being assigned over,
+  // so only `__proto__` catches an entry copied by assignment on this path. The
+  // loss is silent: an update from another tab never reaches the hook.
+  test('applies an own __proto__ property from a change event', () => {
+    const { storage, fire } = createSpyStorage()
+    const applyValue = jest.fn()
+
+    renderHook(() => useStorageHandler('__proto__', storageKey, applyValue, storage, 'initial'))
+
+    act(() => {
+      fire({ [storageKey]: { oldValue: '{}', newValue: '{"__proto__":"stored"}' } })
+    })
+    expect(applyValue).toHaveBeenCalledWith('stored')
+  })
+
   test('follows the key the hook is rendering for after it changes', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
