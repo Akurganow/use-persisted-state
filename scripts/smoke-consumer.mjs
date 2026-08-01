@@ -1,4 +1,4 @@
-// Every published specifier must load through both module systems without a second CJS instance.
+// Check the maintained public and compatibility path matrix against the packed package.
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'

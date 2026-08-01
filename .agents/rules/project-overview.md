@@ -35,8 +35,8 @@ compatibility checks described in [packaging](../../docs/packaging.md).
 
 `typecheck` is the only gate that type-checks the test suite — `ts-jest` transpiles per file without
 checking types, so a type error in a test reaches `main` unnoticed without it. `check:package` packs
-a tarball and resolves every published specifier through both module systems, then checks the
-wrapper declarations, `publint` and `attw`; see [packaging](../../docs/packaging.md).
+a tarball, runs the maintained public and compatibility smoke matrix, then checks the wrapper
+declarations, `publint` and `attw`; see [packaging](../../docs/packaging.md).
 
 ### Versioning
 

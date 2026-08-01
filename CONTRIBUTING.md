@@ -40,11 +40,10 @@ npm ci
 | `scripts/` | Package checks run by `npm run check:package` |
 
 The supported API is the package root and the documented storage adapter entry points. Legacy
-`./lib/*` and compatibility `./src/*` paths remain resolvable. Before changing their modules,
-establish a baseline with `npm run build` followed by `npm run check:package`. After the change, run
-`npm run build` followed by `npm run check:package` again. Observable behaviour — what the hook
-returns, when it re-renders, what lands in storage — affects consumers even when the type signature
-is untouched.
+`./lib/*` and compatibility `./src/*` paths remain resolvable; changes to them require the
+[packaging verification](docs/packaging.md#the-gate). Observable behaviour — what the hook returns,
+when it re-renders, what lands in storage — affects consumers even when the type signature is
+untouched.
 
 ## Development commands
 
@@ -113,7 +112,10 @@ Use the body to explain **why** the change was made. The diff already shows what
    bump the version in `package.json` — releases handle both.
 4. **Verify locally:** `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` must all
    pass. CI runs those four on Linux, macOS and Windows for every pull request, and
-   `npm run check:package` on the build output.
+   `npm run check:package` on the build output. For published-path or compatibility changes, run
+   `npm run build` followed by `npm run check:package` in clean checkouts of both the base and changed
+   revisions; `tsc` does not remove stale ignored `lib/` files. Add an explicit
+   `scripts/smoke-consumer.mjs` case for every compatibility or deep-import specifier affected.
 5. **Open the pull request** against `main` and fill in the template. Keep the title in the
    Conventional Commits format, since it determines the released version once merged.
 6. **Update documentation** (README, `docs/`) when the public API or observable behaviour changes.
