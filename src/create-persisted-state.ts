@@ -47,14 +47,7 @@ export default function createPersistedState(storageKey: string, storage: Storag
         applyValue(newValue)
 
         const persistedItem = storage.get(safeStorageKey)[safeStorageKey]
-        let newItem: string
-
-        try {
-          newItem = getNewItem<T>(key, persistedItem, newValue)
-        } catch {
-          // A write replaces the whole entry, so an unreadable one is skipped rather than rebuilt without other keys.
-          return
-        }
+        const newItem = getNewItem<T>(key, persistedItem, newValue)
 
         storage.set({ [safeStorageKey]: newItem })
       },

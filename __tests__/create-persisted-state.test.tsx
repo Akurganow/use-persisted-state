@@ -4,6 +4,37 @@ import createStorage from '../src/utils/create-web-storage'
 import { renderHook, cleanup, act } from '@testing-library/react'
 import type { Storage as StorageAdapter } from '../src/@types/storage'
 
+function createFakeSyncStorage(entries: { [key: string]: string } = {}) {
+  const stored: { [key: string]: string } = { ...entries }
+  const get = jest.fn((keys: string | string[]) => {
+    const result: { [key: string]: string } = {}
+
+    for (const key of Array.isArray(keys) ? keys : [keys]) {
+      if (key in stored) result[key] = stored[key]
+    }
+
+    return result
+  })
+  const set = jest.fn((items: { [key: string]: string }) => {
+    Object.assign(stored, items)
+  })
+  const remove = jest.fn((keys: string | string[]) => {
+    for (const key of Array.isArray(keys) ? keys : [keys]) delete stored[key]
+  })
+  const fakeStorage: StorageAdapter = {
+    get,
+    set,
+    remove,
+    onChanged: {
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      hasListener: () => false,
+    },
+  }
+
+  return { fakeStorage, get, set, remove, stored }
+}
+
 describe('hook defined correctly', () => {
   const [usePersistedState, clear] = createPersistedState('test', storage)
 
@@ -409,62 +440,139 @@ describe('concurrent writers on one factory', () => {
   })
 })
 
-describe('an entry the hook cannot read', () => {
-  const entryKey = 'persisted_state_hook:damaged'
-  const [usePersistedState] = createPersistedState('damaged', storage)
-  let consoleError: jest.SpyInstance
+describe('write failures', () => {
+  const entryKey = 'persisted_state_hook:writeFailures'
 
   beforeEach(() => {
     cleanup()
-    localStorage.clear()
-    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
   })
 
-  afterEach(() => {
-    consoleError.mockRestore()
+  test.each([
+    ['an empty shared entry', '', SyntaxError],
+    ['an unreadable entry', '{"alpha":"one"', SyntaxError],
+    ['a non-object entry', 'null', TypeError],
+  ])('throws for %s without replacing its bytes', (_name, persistedEntry, ErrorType) => {
+    const { fakeStorage, set, stored } = createFakeSyncStorage({ [entryKey]: persistedEntry })
+    const [useWriteFailureState] = createPersistedState('writeFailures', fakeStorage)
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    try {
+      const { result } = renderHook(() => useWriteFailureState('gamma', 'initial'))
+      let thrownBySetter: unknown
+
+      consoleError.mockClear()
+
+      act(() => {
+        try {
+          result.current[1]('requested')
+        } catch (error) {
+          thrownBySetter = error
+        }
+      })
+
+      expect(thrownBySetter).toBeInstanceOf(ErrorType)
+      expect(result.current[0]).toBe('requested')
+      expect(stored[entryKey]).toBe(persistedEntry)
+      expect(set).not.toHaveBeenCalled()
+      expect(consoleError).not.toHaveBeenCalled()
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
-  test('is left in storage rather than replaced by the next write', () => {
-    // Truncated rather than garbage on purpose: alpha and beta are still legible in the bytes,
-    // and only a write that replaces them makes the loss permanent.
-    const damagedEntry = '{"alpha":"one","beta":"two"'
+  test('throws on serialization failure without replacing the entry', () => {
+    const persistedEntry = '{"alpha":"one"}'
+    const { fakeStorage, set, stored } = createFakeSyncStorage({ [entryKey]: persistedEntry })
+    const [useWriteFailureState] = createPersistedState('writeFailures', fakeStorage)
+    const { result } = renderHook(() => useWriteFailureState<object>('gamma', {}))
+    const circular: { self?: unknown } = {}
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    let thrownBySetter: unknown
 
-    localStorage.setItem(entryKey, damagedEntry)
+    try {
+      circular.self = circular
 
-    const { result } = renderHook(() => usePersistedState('gamma', 'initial'))
+      act(() => {
+        try {
+          result.current[1](circular)
+        } catch (error) {
+          thrownBySetter = error
+        }
+      })
 
-    act(() => {
-      result.current[1]('three')
+      expect(thrownBySetter).toBeInstanceOf(TypeError)
+      expect(result.current[0]).toBe(circular)
+      expect(stored[entryKey]).toBe(persistedEntry)
+      expect(set).not.toHaveBeenCalled()
+      expect(consoleError).not.toHaveBeenCalled()
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  test('propagates a write-time backend get failure unchanged', () => {
+    const failure = new Error('get failed')
+    const { fakeStorage, get, set } = createFakeSyncStorage()
+    const [useWriteFailureState] = createPersistedState('writeFailures', fakeStorage)
+    const { result } = renderHook(() => useWriteFailureState('gamma', 'initial'))
+    let thrownBySetter: unknown
+
+    get.mockImplementationOnce(() => {
+      throw failure
     })
-
-    // The write is refused, not the update: the caller keeps what it set, and hears why it did
-    // not persist.
-    expect(result.current[0]).toBe('three')
-    expect(localStorage.__STORE__[entryKey]).toBe(damagedEntry)
-    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't write value to storage", expect.any(Error))
-  })
-
-  test('survives a write when it is a foreign JSON value', () => {
-    // A bare `null` did not merely lose the write, it threw out of the setter and into whatever
-    // called it, which for a consumer is a click handler. Catching that throw here is the whole
-    // point of the case: a crashing setter leaves the entry untouched for the same reason a
-    // refusal does, so the storage assertion below holds either way and proves nothing on its
-    // own. What separates the two is whether the caller was handed an exception.
-    localStorage.setItem(entryKey, 'null')
-
-    const { result } = renderHook(() => usePersistedState('gamma', 'initial'))
-    let thrownBySetter: unknown = null
 
     act(() => {
       try {
-        result.current[1]('three')
-      } catch (err) {
-        thrownBySetter = err
+        result.current[1]('requested')
+      } catch (error) {
+        thrownBySetter = error
       }
     })
 
-    expect(thrownBySetter).toBeNull()
-    expect(result.current[0]).toBe('three')
-    expect(localStorage.__STORE__[entryKey]).toBe('null')
+    expect(thrownBySetter).toBe(failure)
+    expect(result.current[0]).toBe('requested')
+    expect(set).not.toHaveBeenCalled()
+  })
+
+  test('propagates a backend set failure unchanged', () => {
+    const failure = new Error('set failed')
+    const { fakeStorage, set } = createFakeSyncStorage()
+    const [useWriteFailureState] = createPersistedState('writeFailures', fakeStorage)
+    const { result } = renderHook(() => useWriteFailureState('gamma', 'initial'))
+    let thrownBySetter: unknown
+
+    set.mockImplementationOnce(() => {
+      throw failure
+    })
+
+    act(() => {
+      try {
+        result.current[1]('requested')
+      } catch (error) {
+        thrownBySetter = error
+      }
+    })
+
+    expect(thrownBySetter).toBe(failure)
+    expect(result.current[0]).toBe('requested')
+  })
+
+  test('propagates a backend remove failure unchanged', () => {
+    const failure = new Error('remove failed')
+    const { fakeStorage, remove } = createFakeSyncStorage()
+    const [, clearFailedEntry] = createPersistedState('writeFailures', fakeStorage)
+    let thrownByClear: unknown
+
+    remove.mockImplementationOnce(() => {
+      throw failure
+    })
+
+    try {
+      clearFailedEntry()
+    } catch (error) {
+      thrownByClear = error
+    }
+
+    expect(thrownByClear).toBe(failure)
   })
 })

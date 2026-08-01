@@ -30,14 +30,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
   const commitEntry = <T>(key: string, newValue: T): Promise<void> => {
     const write = entryWrites.then(async () => {
       const persistedItem = await storage.get(safeStorageKey)
-      let newItem: string
-
-      try {
-        newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
-      } catch {
-        // A write replaces the whole entry, so an unreadable one is skipped rather than rebuilt without other keys.
-        return
-      }
+      const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
 
       await storage.set({ [safeStorageKey]: newItem })
     })
