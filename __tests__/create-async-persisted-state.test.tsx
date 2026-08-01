@@ -62,11 +62,14 @@ function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferre
     const changes: { [key: string]: StorageChange } = {}
 
     for (const key of toKeyList(keys)) {
-      changes[key] = { oldValue: stored[key] ?? null, newValue: null }
+      // As the bundled adapters do: a key that held nothing is not reported removed.
+      if (!(key in stored)) continue
+
+      changes[key] = { oldValue: stored[key], newValue: null }
       delete stored[key]
     }
 
-    fire(changes)
+    if (Object.keys(changes).length > 0) fire(changes)
   })
   const asyncStorage: AsyncStorage = {
     get,
@@ -166,17 +169,20 @@ describe('reference initial values', () => {
 })
 
 describe('functional updates', () => {
-  test('applies every functional update queued in one batch', async () => {
-    const { asyncStorage } = createFakeAsyncStorage()
+  test('persists every functional update queued in one batch', async () => {
+    const { asyncStorage, stored } = createFakeAsyncStorage()
     const [useCountPersistedState] = createAsyncPersistedState('updates', asyncStorage)
     const { result } = renderHook(() => useCountPersistedState('count', 0))
 
     await act(async () => {
-      result.current[1](previous => previous + 1)
-      result.current[1](previous => previous + 1)
+      const first = result.current[1](previous => previous + 1)
+      const second = result.current[1](previous => previous + 1)
+
+      await Promise.all([first, second])
     })
 
     expect(result.current[0]).toBe(2)
+    expect(JSON.parse(stored['persisted_state_hook:updates'])).toEqual({ count: 2 })
   })
 })
 
@@ -484,6 +490,32 @@ describe('storage round-trips', () => {
 
     expect(result.current[0]).toEqual(applied)
     expect(result.current[0]).not.toBe(applied)
+  })
+
+  test('rewrites the entry without the key when a setter receives undefined', async () => {
+    const entryKey = 'persisted_state_hook:undefinedAsync'
+    // Seeded with the target key, so a setter that never persists leaves
+    // 'persisted' behind for the fresh reader instead of its initial value.
+    const { asyncStorage, stored } = createFakeAsyncStorage({
+      [entryKey]: JSON.stringify({ target: 'persisted', sibling: 'kept' }),
+    })
+    const [useUndefinedState] = createAsyncPersistedState('undefinedAsync', asyncStorage)
+    const { result } = renderHook(() => useUndefinedState<string | undefined>('target', 'initial'))
+
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current[1](undefined)
+    })
+
+    expect(result.current[0]).toBeUndefined()
+    expect(JSON.parse(stored[entryKey])).toEqual({ sibling: 'kept' })
+
+    const { result: reader } = renderHook(() => useUndefinedState<string | undefined>('target', 'fresh initial'))
+
+    await act(async () => {})
+
+    expect(reader.current[0]).toBe('fresh initial')
   })
 })
 

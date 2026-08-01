@@ -4,6 +4,7 @@ import createStorage from '../src/utils/create-web-storage'
 import { renderHook, cleanup, act } from '@testing-library/react'
 import type { Storage as StorageAdapter } from '../src/@types/storage'
 
+/** A silent backend: unlike the async fake, it never fires a change event for its own writes. */
 function createFakeSyncStorage(entries: { [key: string]: string } = {}) {
   const stored: { [key: string]: string } = { ...entries }
   const get = jest.fn((keys: string | string[]) => {
@@ -135,7 +136,7 @@ describe('functional updates', () => {
     localStorage.clear()
   })
 
-  test('applies every functional update queued in one batch', () => {
+  test('persists every functional update queued in one batch', () => {
     const { result } = renderHook(() => usePersistedState('count', 0))
 
     act(() => {
@@ -144,6 +145,7 @@ describe('functional updates', () => {
     })
 
     expect(result.current[0]).toBe(2)
+    expect(JSON.parse(localStorage.__STORE__['persisted_state_hook:updates'])).toEqual({ count: 2 })
   })
 })
 
@@ -307,6 +309,26 @@ describe('foreign entries under the factory key', () => {
     const { result } = renderHook(() => usePersistedState('constructor', 'initial'))
 
     expect(result.current[0]).toBe('initial')
+  })
+
+  // `constructor` is an inherited data property; `__proto__` is an accessor on
+  // `Object.prototype`, so it breaks under assignment where `constructor` does not.
+  test('round-trips a __proto__ key without touching the prototype', () => {
+    localStorage.setItem(entryKey, '{"alpha":"kept"}')
+
+    const { result } = renderHook(() => usePersistedState('__proto__', 'initial'))
+
+    expect(result.current[0]).toBe('initial')
+
+    act(() => {
+      result.current[1]('written')
+    })
+
+    expect(localStorage.__STORE__[entryKey]).toBe('{"alpha":"kept","__proto__":"written"}')
+
+    const { result: reader } = renderHook(() => usePersistedState('__proto__', 'fresh initial'))
+
+    expect(reader.current[0]).toBe('written')
   })
 
   test('reports a non-object JSON entry and mounts on its initial value', () => {
