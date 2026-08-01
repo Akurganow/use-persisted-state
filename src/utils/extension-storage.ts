@@ -5,18 +5,12 @@ const TRACKED_AREAS = ['local', 'sync', 'managed'] as const
 
 export type Area = (typeof TRACKED_AREAS)[number]
 
-// Both browsers also report `session` changes, an area this library does not
-// expose. Dispatching one would read an undefined notifier and throw.
+// Both browsers also report `session`, an area this library does not expose; dispatching one would throw.
 function isTrackedArea(area: string): area is Area {
   return (TRACKED_AREAS as readonly string[]).includes(area)
 }
 
-/**
- * Extension storage holds arbitrary JSON, while this library only ever writes
- * serialized strings. Anything else under a key belongs to other code and is
- * reported as absent — which is what effectively happened before, once such a
- * value reached `JSON.parse` and the hook fell back to its initial value.
- */
+/** Extension storage holds arbitrary JSON; this library writes only strings, so anything else reads as absent. */
 export function toStoredValue(value: unknown): string | null | undefined {
   if (value === undefined) return
 
@@ -53,12 +47,7 @@ export interface ListenerRegistry {
   createOnChanged(area: Area): StorageChangeEvent
 }
 
-/**
- * Demultiplexes an extension's single `onChanged` event, which names the area
- * that changed, to one notifier per area. Each adapter owns its own registry,
- * so a change in one browser's storage never reaches listeners registered on
- * another's.
- */
+/** Demultiplexes an extension's single `onChanged` event to one notifier per area, one registry per adapter. */
 export function createListenerRegistry(): ListenerRegistry {
   const notifiers: { [area in Area]: ChangeNotifier } = {
     local: createChangeNotifier(),

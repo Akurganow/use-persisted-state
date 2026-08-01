@@ -6,21 +6,12 @@ function toKeyList(keys: string | string[]): string[] {
   return Array.isArray(keys) ? keys : [keys]
 }
 
-/**
- * Adapts a Web Storage area to the library's `Storage` contract.
- *
- * Pass `undefined` where the global is missing, as it is on a server: the
- * adapter then reads back nothing and **silently discards every write**, so a
- * consumer keeps its initial value instead of the import throwing. Listeners
- * are still accepted and reported, they simply never fire.
- */
+/** Adapts a Web Storage area. With `undefined`, as on a server, it reads back nothing and discards every write. */
 export default (storage: globalThis.Storage | undefined): Storage => {
-  // Per-instance notifier: the localStorage and sessionStorage adapters must not
-  // share listeners, or a write to one area notifies subscribers of the other.
+  // Per instance: the localStorage and sessionStorage adapters must not share listeners.
   const notifier = createChangeNotifier()
 
-  // Only a missing global is inert. Anything else a caller passes has to fail
-  // on first use instead of swallowing their writes.
+  // Only a missing global is inert; anything else a caller passes has to fail on first use.
   if (storage === undefined) {
     return {
       get: () => ({}),
@@ -32,9 +23,7 @@ export default (storage: globalThis.Storage | undefined): Storage => {
 
   const route: StorageEventRoute = { storage, fire: notifier.fire }
 
-  // The DOM subscription is shared and reference counted: an adapter joins it
-  // with its first listener and lets go with its last, so factory calls nobody
-  // listens to leave nothing attached to the global object.
+  // The DOM subscription is shared and reference counted, so adapters nobody listens to attach nothing.
   const onChanged: StorageChangeEvent = {
     addListener(listener) {
       notifier.onChanged.addListener(listener)
@@ -58,8 +47,7 @@ export default (storage: globalThis.Storage | undefined): Storage => {
       for (const key of toKeyList(keys)) {
         const item = storage.getItem(key)
 
-        // `null` is the only answer that means absence: an empty string is a
-        // value the caller stored, and reporting it as a missing key loses it.
+        // `null` is the only answer meaning absence; an empty string is a value the caller stored.
         if (item !== null) result[key] = item
       }
 

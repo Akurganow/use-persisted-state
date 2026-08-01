@@ -1,25 +1,16 @@
 import { isAsyncFunction, isFunction, isPromise } from '@plq/is'
 import type { AsyncStorage } from '../@types/storage'
 
-// An unvalidated candidate: its members are unknown until each one is checked.
 type StorageCandidate = {
   get?: unknown
   set?: unknown
   remove?: unknown
 }
 
-// `AsyncStorage` is three methods, so every member has to be callable: a promise standing in for
-// one satisfies nothing the hook then does with it. `@plq/is` classifies async functions as their
-// own type, so `isFunction` rejects them and both checks are needed to admit a callable member.
+// `@plq/is` classifies async functions as their own type, so `isFunction` alone rejects them.
 const isCallableMember = (member: unknown): boolean => isFunction(member) || isAsyncFunction(member)
 
-/**
- * Narrows a storage to {@link AsyncStorage}, deciding which hook the entry point builds.
- *
- * Inspection never writes: `set` and `remove` are only checked for shape, never invoked, so
- * `get` alone decides. A candidate pairing an async `get` with a sync `set` satisfies neither
- * storage interface, which is why proving the other two members is not worth a write.
- */
+/** Narrows a storage to {@link AsyncStorage}. Inspecting never writes: `set` and `remove` are never called. */
 export default function isAsyncStorage(storage: unknown): storage is AsyncStorage {
   const candidate = storage as StorageCandidate | null | undefined
 
@@ -42,23 +33,14 @@ export default function isAsyncStorage(storage: unknown): storage is AsyncStorag
     return false
   }
 
-  // `AsyncStorage` admits a plain function returning a promise, and nothing short of a call tells
-  // that apart from a sync get. Any adapter written that way can only be recognised here, and a
-  // third-party one is free to be written that way, so this line stays necessary however the
-  // shipped adapters happen to declare themselves. A read is the one probe that leaves the
-  // inspected storage as it found it.
+  // A plain function returning a promise is a valid `AsyncStorage`, and only a call tells it from a sync get.
   let probe: unknown
 
   try {
-    // Called as a method of the storage it belongs to: an adapter written as an
-    // object of methods reads its own state through `this`, and probing the
-    // extracted function would throw on a storage that is perfectly valid.
+    // Called as a method: an adapter reading its own state through `this` would throw on a torn-off function.
     probe = get.call(candidate, '')
   } catch {
-    // Not swallowed, deferred: consumers build the factory at module scope, where
-    // a throw takes the import down instead of reaching a component. A storage
-    // whose read fails is not provably async, and the sync path raises the same
-    // failure at the first read, where it can be handled.
+    // Deferred, not swallowed: factories are built at module scope, where a throw takes the import down.
     return false
   }
 
@@ -66,9 +48,7 @@ export default function isAsyncStorage(storage: unknown): storage is AsyncStorag
     return false
   }
 
-  // Only the probe's shape answers the question, so its outcome is discarded by construction.
-  // The rejection still has to be claimed: unclaimed, it terminates the process on Node 15+,
-  // letting a storage that merely fails a read take the consuming application down with it.
+  // An unclaimed rejection terminates the process on Node 15+, so the discarded probe still has to be claimed.
   probe.then(undefined, () => undefined)
 
   return true
