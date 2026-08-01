@@ -1,15 +1,5 @@
-// Publishes the package, unless this exact version is already on the registry.
-//
-// A release can fail after the tag is pushed but before the GitHub release exists: the tag is on
-// origin, the version may already be on npm, and nothing has finished the job. Re-running the
-// release is the recovery, and that only works if publishing twice is harmless. npm refuses to
-// replace a published version, so a plain `npm publish` would fail the retry on its first step
-// and leave the release permanently unfinishable.
-//
-// Only a 404 is read as "not published yet". Every other failure — an unreachable registry above
-// all — fails the release instead. Treating those as "nothing to publish" would report a green
-// release for a package that never reached the registry, which is the one outcome worse than
-// stopping.
+// Publish retries must skip an existing exact version.
+// Only E404 proves absence; every other lookup failure stops the release.
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -17,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-// release-it rewrote this during its bump phase, and the tag it pushed carries the same version.
+// release-it already wrote the version carried by the pushed tag.
 const { name, version } = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
 const spec = `${name}@${version}`
 
@@ -29,8 +19,7 @@ const readErrorCode = stdout => {
   }
 }
 
-// Both commands go through a shell on purpose: npm is a .cmd shim on Windows. The spec is built
-// from this package's own manifest, so there is nothing external to quote.
+// Use a shell because npm is a .cmd shim on Windows; spec comes from this manifest.
 const view = spawnSync(`npm view ${spec} version --json`, {
   cwd: packageRoot,
   encoding: 'utf8',
@@ -47,8 +36,6 @@ if (view.status === 0) {
   process.exit(0)
 }
 
-// npm reports a missing version and a missing package alike, as E404 in its JSON error. Anything
-// else is a registry that could not answer the question, not an answer of "no".
 const reportedCode = readErrorCode(view.stdout)
 
 if (reportedCode !== 'E404') {

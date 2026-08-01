@@ -94,6 +94,9 @@ installs the package.**
 | `BREAKING CHANGE:` in the body/footer | major |
 | `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
 
+Use `feat:` for feature commits. The current release configuration also accepts the non-standard
+`feature:` compatibility alias as minor, pending a separate policy decision.
+
 Use the body to explain **why** the change was made. The diff already shows what changed.
 
 ## Proposing a change
