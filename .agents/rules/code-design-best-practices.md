@@ -49,5 +49,5 @@ Never leak a backend's quirks inward, and never widen a core type to accommodate
 - A predicate must not mutate user storage. `isAsyncStorage` uses declared capabilities first and,
   only when they cannot decide, performs one observable `get('')` read without writing or removing.
 - Prefer clear names over comments; when a comment is needed, it explains why.
-- Derive error handling from the public contract: propagate unexpected failures and handle expected
-  absence or invalid persisted data deliberately.
+- Derive error handling from the public API and ownership boundary: surface or deliberately handle
+  every failure.
