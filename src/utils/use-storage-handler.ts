@@ -1,7 +1,9 @@
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { AsyncStorage, Storage, StorageChange } from '../@types/storage'
 import { isFunction, isObject } from '@plq/is'
+
+const useIsomorphicLayoutEffect = typeof globalThis.window === 'undefined' ? useEffect : useLayoutEffect
 
 // A stored `null` is a value, so absence needs a status of its own rather than a `null` value.
 type StoredValue<T> = { status: 'stored'; value: T } | { status: 'unavailable' }
@@ -71,10 +73,12 @@ export default function useStorageHandler<T>(
   storage: AsyncStorage | Storage,
   initialValue: T | (() => T),
 ): void {
-  // A ref, not a dependency: an inline initial value changes identity every render and would churn it.
   const latestInitialValue = useRef(initialValue)
 
-  latestInitialValue.current = initialValue
+  // An abandoned render must not change the fallback observed by the active listener.
+  useIsomorphicLayoutEffect(() => {
+    latestInitialValue.current = initialValue
+  }, [initialValue])
 
   useEffect(() => {
     const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, latestInitialValue)

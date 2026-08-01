@@ -320,13 +320,13 @@ describe('storage access', () => {
     const [useSpiedPersistedState] = createPersistedState('reads', spyStorage)
     const { rerender } = renderHook(() => useSpiedPersistedState('foo', 'bar'))
 
-    const readsAfterMount = get.mock.calls.length
+    expect(get).toHaveBeenCalledTimes(1)
 
     rerender()
     rerender()
     rerender()
 
-    expect(get.mock.calls.length).toBe(readsAfterMount)
+    expect(get).toHaveBeenCalledTimes(1)
   })
 })
 
