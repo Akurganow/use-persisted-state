@@ -71,19 +71,32 @@ describe('use-storage-handler', () => {
     expect(applyValue).toHaveBeenCalledWith('second')
   })
 
-  test('does not restore a function initialValue the removed entry already held', () => {
-    const { storage, fire } = createSpyStorage()
-    const applyValue = jest.fn()
+  describe('removal events', () => {
+    test.each([
+      ['an omitted old value', undefined],
+      ['an equal old value', JSON.stringify({ [itemKey]: 'initial' })],
+      ['unreadable old bytes', 'not json'],
+    ])('restores the initial value for %s', (_name, oldValue) => {
+      const { storage, fire } = createSpyStorage()
+      const applyValue = jest.fn()
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const parse = jest.spyOn(JSON, 'parse')
 
-    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial'))
+      try {
+        renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial'))
 
-    act(() => {
-      fire({ [storageKey]: { oldValue: JSON.stringify({ [itemKey]: 'initial' }), newValue: null } })
+        act(() => {
+          fire({ [storageKey]: { oldValue, newValue: null } })
+        })
+
+        expect(applyValue).toHaveBeenCalledWith('initial')
+        expect(parse).not.toHaveBeenCalled()
+        expect(consoleError).not.toHaveBeenCalled()
+      } finally {
+        parse.mockRestore()
+        consoleError.mockRestore()
+      }
     })
-
-    // A factory is never equal to the value it produces, so comparing against the
-    // declaration instead of the resolved value re-applies it every time.
-    expect(applyValue).not.toHaveBeenCalled()
   })
 
   test('applies a stored null instead of reading it as no value', () => {
@@ -209,21 +222,6 @@ describe('use-storage-handler', () => {
       fire({
         'persisted_state_hook:elsewhere': { oldValue: null, newValue: JSON.stringify({ [itemKey]: 'not ours' }) },
       })
-    })
-
-    expect(applyValue).not.toHaveBeenCalled()
-  })
-
-  test('does not restore the initial value for a removal that reports nothing removed', () => {
-    const { storage, fire } = createSpyStorage()
-    const applyValue = jest.fn()
-
-    renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial'))
-
-    // Nothing was there to remove, so nothing changed for this hook. Restoring anyway would
-    // overwrite a value the caller had just set with the initial one.
-    act(() => {
-      fire({ [storageKey]: { oldValue: null, newValue: null } })
     })
 
     expect(applyValue).not.toHaveBeenCalled()
