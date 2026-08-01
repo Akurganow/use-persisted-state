@@ -14,7 +14,8 @@ type DeferredResolve = () => void
  * `deferredReads` holds back that many leading `get` calls until `releaseReads`
  * is called, which is how a slow backend is reproduced. Deferring only the
  * leading reads keeps the setter's own read fast, so a late load cannot be
- * masked by the change event the setter's write emits.
+ * masked by the change event the setter's write emits. `stored` is the backing
+ * object itself, so a case can read what actually reached storage.
  */
 function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferredReads = 0) {
   const stored: { [key: string]: string } = { ...entries }
@@ -85,7 +86,7 @@ function createFakeAsyncStorage(entries: { [key: string]: string } = {}, deferre
     }
   }
 
-  return { asyncStorage, get, releaseReads }
+  return { asyncStorage, get, releaseReads, stored }
 }
 
 describe('hook defined correctly', () => {
@@ -231,6 +232,31 @@ describe('changing key', () => {
 
     expect(result.current[0]).toBe('value-second')
   })
+
+  test('loads the new key after the previous one has already applied a value', async () => {
+    const { asyncStorage } = createFakeAsyncStorage({
+      'persisted_state_hook:appliedKeys': JSON.stringify({ first: 'value-first', second: 'value-second' }),
+    })
+    const [useKeyedPersistedState] = createAsyncPersistedState('appliedKeys', asyncStorage)
+
+    const { result, rerender } = renderHook(({ itemKey }) => useKeyedPersistedState(itemKey, 'initial'), {
+      initialProps: { itemKey: 'first' },
+    })
+
+    await act(async () => {})
+
+    // The load for the first key has applied, which is the state the second load has to be able
+    // to overrule. The flag that stops a late load reverting a value the caller set belongs to
+    // the key it was raised for; carried across, it shuts the new key's load out for good and the
+    // hook shows the previous key's value under the new key.
+    expect(result.current[0]).toBe('value-first')
+
+    rerender({ itemKey: 'second' })
+
+    await act(async () => {})
+
+    expect(result.current[0]).toBe('value-second')
+  })
 })
 
 describe('setter identity', () => {
@@ -309,5 +335,257 @@ describe('a backend that fails the read', () => {
     // library's own message keeps React's logging from satisfying this.
     expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't read value from storage", expect.any(Error))
     expect(result.current[0]).toBe('initial')
+  })
+})
+
+describe('concurrent writers on one factory', () => {
+  const entryKey = 'persisted_state_hook:concurrent'
+
+  // An in-memory AsyncStorage supplied through the same extension point consumers use. Its
+  // promises resolve immediately: no artificial delay is needed, because awaiting at all is
+  // enough to let a second writer read before the first one has written.
+  function createMemoryStorage() {
+    const entries = new Map<string, string>()
+
+    const memoryStorage: AsyncStorage = {
+      get: async keys => {
+        const key = Array.isArray(keys) ? keys[0] : keys
+        const value = entries.get(key)
+
+        return value === undefined ? {} : { [key]: value }
+      },
+      set: async items => {
+        for (const [key, value] of Object.entries(items)) entries.set(key, value)
+      },
+      remove: async keys => {
+        for (const key of Array.isArray(keys) ? keys : [keys]) entries.delete(key)
+      },
+      onChanged: {
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        hasListener: () => false,
+      },
+    }
+
+    return { storage: memoryStorage, readEntry: () => entries.get(entryKey) }
+  }
+
+  test('should keep both keys when two hooks write at the same time', async () => {
+    const memory = createMemoryStorage()
+    const [useConcurrentState] = createAsyncPersistedState('concurrent', memory.storage)
+
+    const alpha = renderHook(() => useConcurrentState<string>('alpha', 'initial'))
+    const beta = renderHook(() => useConcurrentState<string>('beta', 'initial'))
+
+    await act(async () => {
+      // Started together on purpose: the setter reads the entry, awaits, then writes it back
+      // whole, so a second writer entering that window carries a snapshot taken before the
+      // first one landed.
+      await Promise.all([alpha.result.current[1]('one'), beta.result.current[1]('two')])
+    })
+
+    // Both keys belong to the same entry and neither writer knows about the other. How the
+    // overlap is avoided is open; that no committed write disappears is not.
+    expect(JSON.parse(memory.readEntry() ?? '{}')).toEqual({ alpha: 'one', beta: 'two' })
+  })
+})
+
+describe('own writes', () => {
+  const entryKey = 'persisted_state_hook:echoes'
+
+  test('keeps the value it was given rather than the storage round-trip of it', async () => {
+    // This backend reports the change inside the `set` that made it, which is the arrangement
+    // that proves the record is taken before the write rather than after.
+    const { asyncStorage } = createFakeAsyncStorage()
+    const [useOwnState] = createAsyncPersistedState('own', asyncStorage)
+    const { result } = renderHook(() => useOwnState<{ count: number }>('own', { count: 0 }))
+    const applied = { count: 1 }
+
+    await act(async () => {
+      await result.current[1](applied)
+    })
+
+    // Decoding the echo yields an equal object with a new identity, so an unsuppressed echo hands
+    // the caller something it did not set and re-renders for it. Identity is what shows that,
+    // where a value assertion passes either way.
+    expect(result.current[0]).toBe(applied)
+  })
+
+  test('suppresses every echo it is still waiting for, not only the last', async () => {
+    const stored: { [key: string]: string } = {}
+    const listeners = new Set<StorageChangeListener>()
+    const heldEchoes: Array<() => void> = []
+
+    // A backend free to report a change after the write it reports has settled, as the extension
+    // backends are. Holding the echoes until both writes have landed is what puts the second
+    // write's record in place before the first write's echo arrives.
+    const lateNotifyingStorage: AsyncStorage = {
+      get: async keys => {
+        const key = Array.isArray(keys) ? keys[0] : keys
+
+        return key in stored ? { [key]: stored[key] } : {}
+      },
+      set: async items => {
+        const changes: { [key: string]: StorageChange } = {}
+
+        for (const [key, value] of Object.entries(items)) {
+          changes[key] = { oldValue: stored[key] ?? null, newValue: value }
+          stored[key] = value
+        }
+
+        heldEchoes.push(() => {
+          for (const listener of [...listeners]) listener(changes)
+        })
+      },
+      remove: async () => undefined,
+      onChanged: {
+        addListener: listener => {
+          listeners.add(listener)
+        },
+        removeListener: listener => {
+          listeners.delete(listener)
+        },
+        hasListener: listener => listeners.has(listener),
+      },
+    }
+    const [useEchoState] = createAsyncPersistedState('echoes', lateNotifyingStorage)
+    const { result } = renderHook(() => useEchoState<string>('value', 'initial'))
+
+    await act(async () => {
+      await result.current[1]('first')
+      await result.current[1]('second')
+    })
+
+    await act(async () => {
+      for (const echo of heldEchoes) echo()
+    })
+
+    // One record held only the latest write, so the first write's echo arrived unclaimed, was
+    // read as somebody else's write and put the earlier value back over the later one.
+    expect(result.current[0]).toBe('second')
+    expect(stored[entryKey]).toBe(JSON.stringify({ value: 'second' }))
+  })
+})
+
+describe('an entry the hook cannot read', () => {
+  const entryKey = 'persisted_state_hook:damagedAsync'
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    cleanup()
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  test('is left in storage rather than replaced by the next write', async () => {
+    // Truncated rather than garbage on purpose: alpha and beta are still legible in the bytes,
+    // and only a write that replaces them makes the loss permanent.
+    const damagedEntry = '{"alpha":"one","beta":"two"'
+    const { asyncStorage, stored } = createFakeAsyncStorage({ [entryKey]: damagedEntry })
+    const [useDamagedState] = createAsyncPersistedState('damagedAsync', asyncStorage)
+    const { result } = renderHook(() => useDamagedState('gamma', 'initial'))
+
+    await act(async () => {
+      await result.current[1]('three')
+    })
+
+    // The write is refused, not the update: the caller keeps what it set, and hears why it did
+    // not persist.
+    expect(result.current[0]).toBe('three')
+    expect(stored[entryKey]).toBe(damagedEntry)
+    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't write value to storage", expect.any(Error))
+  })
+
+  test('does not reject the setter, and lets the writes that follow land', async () => {
+    const { asyncStorage, stored } = createFakeAsyncStorage({ [entryKey]: '{"alpha":"one"' })
+    const [useDamagedState] = createAsyncPersistedState('damagedAsync', asyncStorage)
+    const { result } = renderHook(() => useDamagedState('gamma', 'initial'))
+
+    // A refusal that reached the caller as a rejection would be an unhandled rejection in every
+    // consumer that treats the setter as `useState`'s, and those end the process on Node 15+.
+    await act(async () => {
+      await result.current[1]('refused')
+    })
+
+    stored[entryKey] = JSON.stringify({ alpha: 'one' })
+
+    await act(async () => {
+      await result.current[1]('accepted')
+    })
+
+    expect(JSON.parse(stored[entryKey])).toEqual({ alpha: 'one', gamma: 'accepted' })
+  })
+})
+
+describe('a backend that rejects a write', () => {
+  const entryKey = 'persisted_state_hook:flaky'
+
+  test('keeps the entry writable for the calls behind the one that failed', async () => {
+    const stored: { [key: string]: string } = {}
+    let shouldRejectWrite = true
+
+    const flakyStorage: AsyncStorage = {
+      get: async keys => {
+        const key = Array.isArray(keys) ? keys[0] : keys
+
+        return key in stored ? { [key]: stored[key] } : {}
+      },
+      set: async items => {
+        if (shouldRejectWrite) {
+          shouldRejectWrite = false
+
+          throw new Error('write rejected')
+        }
+
+        Object.assign(stored, items)
+      },
+      remove: async () => undefined,
+      onChanged: {
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        hasListener: () => false,
+      },
+    }
+    const [useFlakyState] = createAsyncPersistedState('flaky', flakyStorage)
+    const { result } = renderHook(() => useFlakyState<string>('value', 'initial'))
+
+    await act(async () => {
+      await expect(result.current[1]('first')).rejects.toThrow('write rejected')
+    })
+
+    await act(async () => {
+      await result.current[1]('second')
+    })
+
+    // Writes on one entry run one at a time, and the next one has to start from the settled
+    // promise rather than from the rejected one: chained onto the rejection it would stay pending
+    // for ever, so one failed write would silently stop every later write on the factory.
+    expect(JSON.parse(stored[entryKey])).toEqual({ value: 'second' })
+  })
+})
+
+describe('clearing', () => {
+  const entryKey = 'persisted_state_hook:cleared'
+
+  test('is not undone by a write already on its way to storage', async () => {
+    const { asyncStorage, stored } = createFakeAsyncStorage()
+    const [useDraftState, clearDrafts] = createAsyncPersistedState('cleared', asyncStorage)
+    const { result } = renderHook(() => useDraftState<string>('draft', 'initial'))
+
+    await act(async () => {
+      // Requested while a write is still in flight, which is what the button doing it competes
+      // with in practice. Outside the chain the removal runs first and the write lands after it,
+      // putting back what was asked to be gone - and "clear this data" is the one request that
+      // must not half happen.
+      const write = result.current[1]('typed just before')
+      const cleared = clearDrafts()
+
+      await Promise.all([write, cleared])
+    })
+
+    expect(stored[entryKey]).toBeUndefined()
   })
 })

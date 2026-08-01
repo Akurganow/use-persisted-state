@@ -24,6 +24,18 @@
 * stop the hook overwriting its own state and reading storage on every render ([256f06d](https://github.com/Akurganow/use-persisted-state/commit/256f06dce7dace4ebc6698795a79846baeeb0343))
 * **storages:** ignore storage areas the library does not track ([c4b3c9f](https://github.com/Akurganow/use-persisted-state/commit/c4b3c9f3222ad47c01f2885a6e5bdbf19c81bfb0)), references [#938](https://github.com/Akurganow/use-persisted-state/issues/938)
 
+### Behaviour note: `NaN` and `Infinity`
+
+A stored `NaN` or `Infinity` now reads back as `null` instead of falling back to the initial value.
+
+`JSON.stringify` writes `null`, `NaN` and `Infinity` all as `null`, so the read side cannot tell
+them apart. Returning the initial value for `null` was what stopped a genuinely stored `null` from
+round-tripping, and fixing that necessarily gives up the fallback for the other two.
+
+This ships in a minor release deliberately. A `NaN` or an `Infinity` reaching storage is a defect in
+the calling code; the old fallback did not repair it, it only hid it. If your code can produce
+either, guard the value before writing it.
+
 ## [1.3.0](https://github.com/Akurganow/use-persisted-state/compare/v1.2.0...v1.3.0) (2025-08-02)
 
 ### Features

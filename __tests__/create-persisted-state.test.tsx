@@ -333,3 +333,105 @@ describe('storage access', () => {
     expect(get.mock.calls.length).toBe(readsAfterMount)
   })
 })
+
+describe('concurrent writers on one factory', () => {
+  test('keeps both keys when two hooks write in the same tick', () => {
+    const entryKey = 'persisted_state_hook:syncConcurrent'
+    const entries = new Map<string, string>()
+
+    const memoryStorage: StorageAdapter = {
+      get: keys => {
+        const key = Array.isArray(keys) ? keys[0] : keys
+        const value = entries.get(key)
+
+        return value === undefined ? {} : { [key]: value }
+      },
+      set: items => {
+        for (const [key, value] of Object.entries(items)) entries.set(key, value)
+      },
+      remove: keys => {
+        for (const key of Array.isArray(keys) ? keys : [keys]) entries.delete(key)
+      },
+      onChanged: {
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        hasListener: () => false,
+      },
+    }
+
+    const [useConcurrentState] = createPersistedState('syncConcurrent', memoryStorage)
+    const alpha = renderHook(() => useConcurrentState<string>('alpha', 'initial'))
+    const beta = renderHook(() => useConcurrentState<string>('beta', 'initial'))
+
+    act(() => {
+      alpha.result.current[1]('one')
+      beta.result.current[1]('two')
+    })
+
+    // The asynchronous factory loses one of these: its setter awaits between reading the entry
+    // and writing it back, so a second writer starts from a snapshot taken before the first one
+    // landed. Here the read, the merge and the write run with nothing in between. Keeping that
+    // difference as a case rather than as a measurement is what stops it being rediscovered.
+    expect(JSON.parse(entries.get(entryKey) ?? '{}')).toEqual({ alpha: 'one', beta: 'two' })
+  })
+})
+
+describe('an entry the hook cannot read', () => {
+  const entryKey = 'persisted_state_hook:damaged'
+  const [usePersistedState] = createPersistedState('damaged', storage)
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    cleanup()
+    localStorage.clear()
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  test('is left in storage rather than replaced by the next write', () => {
+    // Truncated rather than garbage on purpose: alpha and beta are still legible in the bytes,
+    // and only a write that replaces them makes the loss permanent.
+    const damagedEntry = '{"alpha":"one","beta":"two"'
+
+    localStorage.setItem(entryKey, damagedEntry)
+
+    const { result } = renderHook(() => usePersistedState('gamma', 'initial'))
+
+    act(() => {
+      result.current[1]('three')
+    })
+
+    // The write is refused, not the update: the caller keeps what it set, and hears why it did
+    // not persist.
+    expect(result.current[0]).toBe('three')
+    expect(localStorage.__STORE__[entryKey]).toBe(damagedEntry)
+    expect(consoleError).toHaveBeenCalledWith("use-persisted-state: Can't write value to storage", expect.any(Error))
+  })
+
+  test('survives a write when it is a foreign JSON value', () => {
+    // A bare `null` did not merely lose the write, it threw out of the setter and into whatever
+    // called it, which for a consumer is a click handler. Catching that throw here is the whole
+    // point of the case: a crashing setter leaves the entry untouched for the same reason a
+    // refusal does, so the storage assertion below holds either way and proves nothing on its
+    // own. What separates the two is whether the caller was handed an exception.
+    localStorage.setItem(entryKey, 'null')
+
+    const { result } = renderHook(() => usePersistedState('gamma', 'initial'))
+    let thrownBySetter: unknown = null
+
+    act(() => {
+      try {
+        result.current[1]('three')
+      } catch (err) {
+        thrownBySetter = err
+      }
+    })
+
+    expect(thrownBySetter).toBeNull()
+    expect(result.current[0]).toBe('three')
+    expect(localStorage.__STORE__[entryKey]).toBe('null')
+  })
+})

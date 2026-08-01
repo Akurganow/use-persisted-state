@@ -11,6 +11,24 @@ same tab. `esm/` therefore contains hand-written wrappers that re-export `lib/`,
 For the same reason the package must **not** gain `"type": "module"`, `sideEffects: false`, or a real
 dual build, and must keep `main` and `types` for resolvers that never read `exports`.
 
+## Why the wrappers are committed while `lib/` is not
+
+They look like build output and are not: nothing in this repository generates them. `lib/` is the
+build output, and it is correctly absent from git. `esm/` and `storages/` are sources that happen to
+be small.
+
+Generating them instead was measured rather than argued: the generator came to 101 lines against 87
+lines of wrapper, because the export names cannot be read statically out of the CommonJS build and
+have to be collected at runtime, which drags in the same global stubs the smoke test needs. It would
+also drop the comments that explain the constraint — the part worth keeping.
+
+The obvious objection is drift: add an adapter, forget its wrapper. That fails loudly. `publint` and
+`attw` name the missing file, `check:smoke` catches a wrapper whose shape no longer matches the
+build, and `check:types` catches a declaration re-exporting a name that is gone.
+
+Reaching for a dual-package builder — tshy, pkgroll, unbuild, tsdown — is the one move to avoid. All
+of them emit two compiled copies, which is the second registry this whole layer exists to prevent.
+
 ## What resolves to what
 
 ```mermaid

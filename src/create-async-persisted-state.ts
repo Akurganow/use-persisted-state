@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import useStorageHandler from './utils/use-storage-handler'
+import useStorageHandler, { recordOwnWrite } from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
@@ -15,8 +15,55 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
 ): [PersistedState, () => Promise<void>] {
   const safeStorageKey = `persisted_state_hook:${storageKey}`
 
+  // Every hook this factory makes lives in one entry, and storing a value means
+  // reading that entry, merging one key into it and writing all of it back, with
+  // a suspension point on either side of the merge. Left to overlap, a second
+  // writer merges into a snapshot taken before the first one landed and stores
+  // it: the first writer's key is gone from storage while its value is still on
+  // screen, and nothing reports the disagreement. It is the entry, not the hook,
+  // that has to be taken one at a time, so the chain belongs to the factory.
+  let entryWrites: Promise<unknown> = Promise.resolve()
+
   const clear = (): Promise<void> => {
-    return storage.remove(safeStorageKey)
+    // Removing the entry changes it as much as storing does, so it takes its turn
+    // in the same chain. Outside it, a write already queued lands after the
+    // removal and brings back what was cleared - and "clear this data" is the one
+    // request that cannot be allowed to half happen.
+    const removal = entryWrites.then(() => storage.remove(safeStorageKey))
+
+    entryWrites = removal.catch(() => undefined)
+
+    return removal
+  }
+
+  const commitEntry = <T>(key: string, newValue: T, pendingOwnWrites: React.RefObject<string[]>): Promise<void> => {
+    const write = entryWrites.then(async () => {
+      const persistedItem = await storage.get(safeStorageKey)
+      let newItem: string
+
+      try {
+        newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
+      } catch {
+        // Refused, and reported where it was refused. A write replaces the whole
+        // entry, so an entry that cannot be read is one no write can be built on
+        // without dropping every other hook's key; skipping leaves the bytes for
+        // a repair to reach. The caller keeps what it set, unpersisted.
+        return
+      }
+
+      // Recorded before the write, because the backend may report it before the
+      // promise settles.
+      recordOwnWrite(pendingOwnWrites, newItem)
+
+      await storage.set({ [safeStorageKey]: newItem })
+    })
+
+    // The chain has to outlive a failed write, or one backend rejection stops
+    // every later write on this entry. The rejection itself is not swallowed: it
+    // stays on the promise handed back to the caller that asked for the write.
+    entryWrites = write.catch(() => undefined)
+
+    return write
   }
 
   const usePersistedState = <T>(key: string, initialValue: T | (() => T)): UsePersistedState<T> => {
@@ -39,23 +86,18 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       setState(value)
     }, [])
 
-    // The exact entry this hook last wrote and has not yet seen reported back.
-    const pendingOwnWrite = useRef<string | null>(null)
+    // The entries this hook has written and not yet seen reported back.
+    const pendingOwnWrites = useRef<string[]>([])
 
     const setPersistedState = useCallback(
       async (newState: React.SetStateAction<T>): Promise<void> => {
         const newValue = getNewValue<T>(newState, latestValue.current)
 
+        // Applied before the write is even queued: the caller sees its value at
+        // once, and only the trip to storage waits its turn.
         applyValue(newValue)
 
-        const persistedItem = await storage.get(safeStorageKey)
-        const newItem = getNewItem<T>(key, persistedItem[safeStorageKey], newValue)
-
-        // Recorded before the write, because the backend may report it before the
-        // promise settles.
-        pendingOwnWrite.current = newItem
-
-        await storage.set({ [safeStorageKey]: newItem })
+        await commitEntry<T>(key, newValue, pendingOwnWrites)
       },
       [key, applyValue],
     )
@@ -70,7 +112,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
     // between the read and the subscription in which a write belongs to neither
     // and is lost. Reading last covers everything written before the subscription
     // began, and the listener covers everything after.
-    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrite)
+    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrites)
 
     useEffect(() => {
       // Two separate questions, and one cell cannot hold both: whether this load

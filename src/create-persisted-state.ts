@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { Storage } from './@types/storage'
 import type { PersistedState, UsePersistedState } from './@types/hook'
 
-import useStorageHandler from './utils/use-storage-handler'
+import useStorageHandler, { recordOwnWrite } from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
@@ -48,8 +48,8 @@ export default function createPersistedState(storageKey: string, storage: Storag
       applyValue(readPersisted(key, initialValue))
     }
 
-    // The exact entry this hook last wrote and has not yet seen reported back.
-    const pendingOwnWrite = useRef<string | null>(null)
+    // The entries this hook has written and not yet seen reported back.
+    const pendingOwnWrites = useRef<string[]>([])
 
     const setPersistedState = useCallback(
       (newState: React.SetStateAction<T>): void => {
@@ -58,16 +58,26 @@ export default function createPersistedState(storageKey: string, storage: Storag
         applyValue(newValue)
 
         const persistedItem = storage.get(safeStorageKey)[safeStorageKey]
-        const newItem = getNewItem<T>(key, persistedItem, newValue)
+        let newItem: string
 
-        pendingOwnWrite.current = newItem
+        try {
+          newItem = getNewItem<T>(key, persistedItem, newValue)
+        } catch {
+          // Refused, and reported where it was refused. A write replaces the whole
+          // entry, so an entry that cannot be read is one no write can be built on
+          // without dropping every other hook's key; skipping leaves the bytes for
+          // a repair to reach. The caller keeps what it set, unpersisted.
+          return
+        }
+
+        recordOwnWrite(pendingOwnWrites, newItem)
 
         storage.set({ [safeStorageKey]: newItem })
       },
       [key, applyValue],
     )
 
-    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrite)
+    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrites)
 
     return [state, setPersistedState]
   }

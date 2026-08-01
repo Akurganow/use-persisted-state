@@ -225,6 +225,20 @@ persisted_state_hook:example → {"count":0}
 
 Storage backends only ever see serialized strings. Anything you persist ends up unencrypted in the underlying storage — do not store secrets or sensitive data (see [SECURITY.md](https://github.com/Akurganow/use-persisted-state/blob/main/SECURITY.md)).
 
+### An entry the library cannot read
+
+A write replaces the factory's whole entry, so there is nothing safe to store when the entry already
+there is a string that will not parse, or parses to something that is not an object — another
+library writing under the same key, or a write cut short. The setter reports the failure on
+`console.error`, keeps the value you set in memory and writes nothing, leaving every other hook's
+key exactly where it is. The factory's `clear` removes the entry and lets writing resume.
+
+This reaches as far as the adapter reports. Web storage holds only strings, so anything under the
+key comes back and is checked. Extension storage holds arbitrary JSON, and the bundled adapters
+report a non-string value as absent — the library then reads the entry as empty and its next write
+**replaces that value**. Storing your own data under a `persisted_state_hook:` key in extension
+storage is not safe, whatever its type.
+
 ### Values JSON cannot carry
 
 A few values do not survive `JSON.stringify`. This follows from the format rather than from a choice
