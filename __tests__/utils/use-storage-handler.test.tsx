@@ -7,7 +7,7 @@ const storageKey = 'persisted_state_hook:test'
 const itemKey = 'foo'
 
 // Stable across renders, as the ref the hooks pass in is.
-const createOwnWriteRecord = (): React.RefObject<string | null> => ({ current: null })
+const createOwnWriteRecord = (): React.RefObject<string[]> => ({ current: [] })
 
 function createSpyStorage() {
   const listeners = new Set<StorageChangeListener>()
@@ -40,11 +40,11 @@ describe('use-storage-handler', () => {
   test('keeps one subscription when initialValue is a new object on every render', () => {
     const { storage, addListener, removeListener } = createSpyStorage()
     const applyValue = jest.fn()
-    const pendingOwnWrite = createOwnWriteRecord()
+    const pendingOwnWrites = createOwnWriteRecord()
 
     const { rerender } = renderHook(
       ({ initialValue }) =>
-        useStorageHandler<{ count: number }>(itemKey, storageKey, applyValue, storage, initialValue, pendingOwnWrite),
+        useStorageHandler<{ count: number }>(itemKey, storageKey, applyValue, storage, initialValue, pendingOwnWrites),
       { initialProps: { initialValue: { count: 0 } } },
     )
 
@@ -58,11 +58,11 @@ describe('use-storage-handler', () => {
   test('restores the initialValue of the latest render when the entry is removed', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
-    const pendingOwnWrite = createOwnWriteRecord()
+    const pendingOwnWrites = createOwnWriteRecord()
 
     const { rerender } = renderHook(
       ({ initialValue }) =>
-        useStorageHandler<string>(itemKey, storageKey, applyValue, storage, initialValue, pendingOwnWrite),
+        useStorageHandler<string>(itemKey, storageKey, applyValue, storage, initialValue, pendingOwnWrites),
       { initialProps: { initialValue: 'first' } },
     )
 
@@ -81,10 +81,10 @@ describe('use-storage-handler', () => {
   test('does not restore a function initialValue the removed entry already held', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
-    const pendingOwnWrite = createOwnWriteRecord()
+    const pendingOwnWrites = createOwnWriteRecord()
 
     renderHook(() =>
-      useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial', pendingOwnWrite),
+      useStorageHandler<string>(itemKey, storageKey, applyValue, storage, () => 'initial', pendingOwnWrites),
     )
 
     act(() => {
@@ -99,10 +99,10 @@ describe('use-storage-handler', () => {
   test('applies a stored null instead of reading it as no value', () => {
     const { storage, fire } = createSpyStorage()
     const applyValue = jest.fn()
-    const pendingOwnWrite = createOwnWriteRecord()
+    const pendingOwnWrites = createOwnWriteRecord()
 
     renderHook(() =>
-      useStorageHandler<string | null>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite),
+      useStorageHandler<string | null>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites),
     )
 
     act(() => {
@@ -129,9 +129,9 @@ describe('use-storage-handler', () => {
     test('reports an entry that will not parse', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
-      const pendingOwnWrite = createOwnWriteRecord()
+      const pendingOwnWrites = createOwnWriteRecord()
 
-      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite))
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
 
       act(() => {
         fire({ [storageKey]: { oldValue: null, newValue: 'not json' } })
@@ -144,9 +144,9 @@ describe('use-storage-handler', () => {
     test('says nothing about an entry that is a bare JSON primitive', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
-      const pendingOwnWrite = createOwnWriteRecord()
+      const pendingOwnWrites = createOwnWriteRecord()
 
-      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite))
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
 
       // A number parses, so this is not a broken entry: it is a foreign one, as
       // routine as an entry carrying only other keys. `in` throws on it, and the
@@ -163,9 +163,9 @@ describe('use-storage-handler', () => {
     test('says nothing about an entry that simply does not carry the key', () => {
       const { storage, fire } = createSpyStorage()
       const applyValue = jest.fn()
-      const pendingOwnWrite = createOwnWriteRecord()
+      const pendingOwnWrites = createOwnWriteRecord()
 
-      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite))
+      renderHook(() => useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites))
 
       act(() => {
         fire({ [storageKey]: { oldValue: null, newValue: JSON.stringify({ other: 'value' }) } })
@@ -179,10 +179,10 @@ describe('use-storage-handler', () => {
   test('removes its listener on unmount', () => {
     const { storage, removeListener } = createSpyStorage()
     const applyValue = jest.fn()
-    const pendingOwnWrite = createOwnWriteRecord()
+    const pendingOwnWrites = createOwnWriteRecord()
 
     const { unmount } = renderHook(() =>
-      useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrite),
+      useStorageHandler<string>(itemKey, storageKey, applyValue, storage, 'initial', pendingOwnWrites),
     )
 
     unmount()

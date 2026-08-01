@@ -334,6 +334,48 @@ describe('storage access', () => {
   })
 })
 
+describe('concurrent writers on one factory', () => {
+  test('keeps both keys when two hooks write in the same tick', () => {
+    const entryKey = 'persisted_state_hook:syncConcurrent'
+    const entries = new Map<string, string>()
+
+    const memoryStorage: StorageAdapter = {
+      get: keys => {
+        const key = Array.isArray(keys) ? keys[0] : keys
+        const value = entries.get(key)
+
+        return value === undefined ? {} : { [key]: value }
+      },
+      set: items => {
+        for (const [key, value] of Object.entries(items)) entries.set(key, value)
+      },
+      remove: keys => {
+        for (const key of Array.isArray(keys) ? keys : [keys]) entries.delete(key)
+      },
+      onChanged: {
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        hasListener: () => false,
+      },
+    }
+
+    const [useConcurrentState] = createPersistedState('syncConcurrent', memoryStorage)
+    const alpha = renderHook(() => useConcurrentState<string>('alpha', 'initial'))
+    const beta = renderHook(() => useConcurrentState<string>('beta', 'initial'))
+
+    act(() => {
+      alpha.result.current[1]('one')
+      beta.result.current[1]('two')
+    })
+
+    // The asynchronous factory loses one of these: its setter awaits between reading the entry
+    // and writing it back, so a second writer starts from a snapshot taken before the first one
+    // landed. Here the read, the merge and the write run with nothing in between. Keeping that
+    // difference as a case rather than as a measurement is what stops it being rediscovered.
+    expect(JSON.parse(entries.get(entryKey) ?? '{}')).toEqual({ alpha: 'one', beta: 'two' })
+  })
+})
+
 describe('an entry the hook cannot read', () => {
   const entryKey = 'persisted_state_hook:damaged'
   const [usePersistedState] = createPersistedState('damaged', storage)

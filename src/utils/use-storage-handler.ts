@@ -60,13 +60,37 @@ function applyRemoval<T>(
   applyValue(initialValue)
 }
 
+// A backend that reports nothing back leaves every record unmatched, so the list
+// needs a ceiling or it grows by one string per write for as long as the hook is
+// mounted. A bound, not a tuning: a backend that does report drains the list on
+// every echo, and one that reports late is what the list exists for.
+const MAX_PENDING_OWN_WRITES = 8
+
 /**
- * Reports whether this change is the write the hook itself just made, forgetting
- * the record when it is. A backend reports a write to every listener, the one
- * that made it included, and applying that echo is the storage-to-state re-sync
- * this hook was rebuilt without, arriving by another road: it decodes the entry
- * again and hands the caller an equal value with a new identity, plus a render
- * for a value it already holds.
+ * Remembers an entry the hook is about to write, so the change the backend
+ * reports for it can be told apart from someone else's write.
+ *
+ * Recorded before the write, because a backend may report it before the call
+ * settles. One slot was not enough: a backend free to report after its write
+ * settles - chrome and browser storage both are - lets the next write overwrite
+ * the record of a write still waiting to be reported, and that unsuppressed echo
+ * then puts the earlier value back over the later one.
+ */
+export function recordOwnWrite(pendingOwnWrites: React.RefObject<string[]>, item: string): void {
+  const pending = pendingOwnWrites.current
+
+  if (pending.length >= MAX_PENDING_OWN_WRITES) pending.shift()
+
+  pending.push(item)
+}
+
+/**
+ * Reports whether this change is a write the hook itself made, forgetting the
+ * record when it is. A backend reports a write to every listener, the one that
+ * made it included, and applying that echo is the storage-to-state re-sync this
+ * hook was rebuilt without, arriving by another road: it decodes the entry again
+ * and hands the caller an equal value with a new identity, plus a render for a
+ * value it already holds.
  *
  * The price, accepted knowingly: for a value JSON cannot carry, the writer keeps
  * what it set - NaN - while every other component on the key decodes the null
@@ -79,10 +103,19 @@ function applyRemoval<T>(
  * hook writing the same bytes is suppressed along with it, and nothing is lost:
  * it would have replaced a value with an equal one.
  */
-function consumeOwnWriteEcho(change: StorageChange, pendingOwnWrite: React.RefObject<string | null>): boolean {
-  if (pendingOwnWrite.current === null || change.newValue !== pendingOwnWrite.current) return false
+function consumeOwnWriteEcho(change: StorageChange, pendingOwnWrites: React.RefObject<string[]>): boolean {
+  // A removal carries no entry to match, and matching one against `undefined`
+  // would make an empty record answer for it.
+  if (typeof change.newValue !== 'string') return false
 
-  pendingOwnWrite.current = null
+  const matched = pendingOwnWrites.current.indexOf(change.newValue)
+
+  if (matched === -1) return false
+
+  // Everything recorded before the reported entry goes with it: a backend applies
+  // writes in the order it took them and reports them in that order too, so a
+  // record still unmatched by now has no echo left to wait for.
+  pendingOwnWrites.current.splice(0, matched + 1)
 
   return true
 }
@@ -93,13 +126,13 @@ function createStorageHandler<T>(
   storageKey: string,
   applyValue: (value: T) => void,
   latestInitialValue: React.RefObject<T | (() => T)>,
-  pendingOwnWrite: React.RefObject<string | null>,
+  pendingOwnWrites: React.RefObject<string[]>,
 ) {
   return (changes: { [key: string]: StorageChange }): void => {
     for (const [key, change] of Object.entries(changes)) {
       if (key !== storageKey) continue
 
-      if (consumeOwnWriteEcho(change, pendingOwnWrite)) continue
+      if (consumeOwnWriteEcho(change, pendingOwnWrites)) continue
 
       if (change.newValue === null || change.newValue === undefined) {
         applyRemoval<T>(change, itemKey, applyValue, latestInitialValue)
@@ -119,7 +152,7 @@ export default function useStorageHandler<T>(
   applyValue: (value: T) => void,
   storage: AsyncStorage | Storage,
   initialValue: T | (() => T),
-  pendingOwnWrite: React.RefObject<string | null>,
+  pendingOwnWrites: React.RefObject<string[]>,
 ): void {
   // A removal restores the initial value the hook holds now, the same one the
   // key-change path reads, so a caller whose default travels with its data gets
@@ -132,7 +165,7 @@ export default function useStorageHandler<T>(
   latestInitialValue.current = initialValue
 
   useEffect(() => {
-    const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, latestInitialValue, pendingOwnWrite)
+    const handleStorage = createStorageHandler<T>(key, storageKey, applyValue, latestInitialValue, pendingOwnWrites)
 
     storage.onChanged.addListener(handleStorage)
 
@@ -141,5 +174,5 @@ export default function useStorageHandler<T>(
         storage.onChanged.removeListener(handleStorage)
       }
     }
-  }, [key, storage.onChanged, storageKey, applyValue, pendingOwnWrite])
+  }, [key, storage.onChanged, storageKey, applyValue, pendingOwnWrites])
 }

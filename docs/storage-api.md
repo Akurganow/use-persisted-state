@@ -77,9 +77,11 @@ reported without an `oldValue` is ignored.
   adapters do this.
 - **One entry per factory.** Each `createPersistedState(name, storage)` factory reads and writes a
   single storage key, `persisted_state_hook:<name>`, containing a JSON object with one property per
-  hook key. A write replaces all of it, so an entry the library cannot read — one that will not
-  parse, or that is not a JSON object — is left untouched instead: the write is reported and
-  skipped, so a foreign entry under the same key is never overwritten.
+  hook key. A write replaces all of it, so on an asynchronous storage the library takes one write on
+  that key at a time: your `set` is never called for an entry merged from a snapshot another write
+  has since replaced. An entry the library cannot read — one that will not parse, or that is not a
+  JSON object — is left untouched instead: the write is reported and skipped, so a foreign entry
+  under the same key is never overwritten.
 - **Detection reads, and never writes.** The default export tells `Storage` and `AsyncStorage` apart
   from the shape of your methods first: a `get` declared `async` settles it without any call. Only
   when that does not hold does it call `get('')` once, as a method of your storage, and check whether
