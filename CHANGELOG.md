@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/Akurganow/use-persisted-state/compare/v1.4.0...v1.4.1) (2026-08-01)
+
+### Bug Fixes
+
+* order clear() with the writes queued on the same entry ([8d47ef7](https://github.com/Akurganow/use-persisted-state/commit/8d47ef714b7496b9b6f3453a9e22bccbae0b1f1b))
+* refuse a write onto a storage entry that cannot be read ([16a33c1](https://github.com/Akurganow/use-persisted-state/commit/16a33c1b3e1504d490ad1e0bac196c5b7bd8c7ad))
+* stop concurrent writes on one entry from losing each other ([8af2d12](https://github.com/Akurganow/use-persisted-state/commit/8af2d12c3c08ff26f7ae41e3f2ddf9f26902d5ce))
+
 ## [1.4.0](https://github.com/Akurganow/use-persisted-state/compare/v1.3.0...v1.4.0) (2026-07-31)
 
 ### Features
