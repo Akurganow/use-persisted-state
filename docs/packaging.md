@@ -161,15 +161,21 @@ exports map decides.
 
 `npm run check:package` runs `scripts/check-package.mjs`, which executes every check and reports all of
 them. It deliberately does not chain with `&&`: attw exits non-zero for a reason the build cannot fix
-(below), and while the checks were chained the smoke matrix — the only one that resolves the published
-specifiers for real — never ran.
+(below), and while the checks were chained the smoke matrix — the only one that resolves maintained
+public and compatibility paths from the packed package — never ran.
 
 | Check | Proves |
 | --- | --- |
-| `check:smoke` | Packs a tarball, installs it into a throwaway consumer, and resolves every published specifier through both module systems, asserting a single shared instance. |
+| `check:smoke` | Packs a tarball, installs it into a throwaway consumer, and exercises the maintained public and compatibility path matrix, including shared identity where applicable. |
 | `check:types` | Type-checks the hand-written declarations in `esm/` and `storages/` against the build output. |
 | `check:publint` | Common `package.json` publishing mistakes. |
 | `check:attw` | That the types a consumer gets match the JavaScript they get, per resolver. |
+
+The smoke matrix is explicit, not exhaustive over wildcard exports. Add the exact path to
+`scripts/smoke-consumer.mjs` for every compatibility or deep-import specifier a change affects.
+Compare the base and changed revisions from clean checkouts: run `npm run build` followed by
+`npm run check:package` in each. `tsc` does not remove stale ignored `lib/` files, so an in-place
+rebuild can leave deleted output in the packed tarball and produce a false green.
 
 ### Why attw excludes the `./lib` entry point
 

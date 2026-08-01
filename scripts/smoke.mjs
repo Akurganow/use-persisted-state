@@ -1,8 +1,5 @@
-// Packs the library and installs the tarball into a throwaway consumer, so the
-// checks in smoke-consumer.mjs exercise exactly what npm would publish — the
-// exports map, the files whitelist and the packed file set — not the worktree.
-// execSync goes through a shell on purpose: `npm` is a .cmd shim on Windows,
-// and every interpolated value is a path this script created itself.
+// Exercise the packed tarball in a throwaway consumer, not the worktree.
+// Script-owned paths keep the Windows-compatible shell commands safe.
 import { execSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

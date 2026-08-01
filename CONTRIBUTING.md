@@ -39,9 +39,11 @@ npm ci
 | `esm/`, `storages/` | Hand-written wrappers over `lib/` — see [packaging](docs/packaging.md) |
 | `scripts/` | Package checks run by `npm run check:package` |
 
-Everything under `src/` is public API that other projects depend on. A change to a signature or to
-observable behaviour — what the hook returns, when it re-renders, what lands in storage — affects
-consumers even when the type signature is untouched.
+The supported API is the package root and the documented storage adapter entry points. Legacy
+`./lib/*` and compatibility `./src/*` paths remain resolvable; changes to them require the
+[packaging verification](docs/packaging.md#the-gate). Observable behaviour — what the hook returns,
+when it re-renders, what lands in storage — affects consumers even when the type signature is
+untouched.
 
 ## Development commands
 
@@ -93,6 +95,9 @@ installs the package.**
 | `BREAKING CHANGE:` in the body/footer | major |
 | `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
 
+Use `feat:` for feature commits. The current release configuration also accepts the non-standard
+`feature:` compatibility alias as minor, pending a separate policy decision.
+
 Use the body to explain **why** the change was made. The diff already shows what changed.
 
 ## Proposing a change
@@ -107,7 +112,10 @@ Use the body to explain **why** the change was made. The diff already shows what
    bump the version in `package.json` — releases handle both.
 4. **Verify locally:** `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` must all
    pass. CI runs those four on Linux, macOS and Windows for every pull request, and
-   `npm run check:package` on the build output.
+   `npm run check:package` on the build output. For published-path or compatibility changes, run
+   `npm run build` followed by `npm run check:package` in clean checkouts of both the base and changed
+   revisions; `tsc` does not remove stale ignored `lib/` files. Add an explicit
+   `scripts/smoke-consumer.mjs` case for every compatibility or deep-import specifier affected.
 5. **Open the pull request** against `main` and fill in the template. Keep the title in the
    Conventional Commits format, since it determines the released version once merged.
 6. **Update documentation** (README, `docs/`) when the public API or observable behaviour changes.

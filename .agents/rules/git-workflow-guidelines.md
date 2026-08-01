@@ -26,6 +26,9 @@ them. A wrong type ships a wrong version to everyone who installs the package.
 | `BREAKING CHANGE:` in the body | major |
 | `chore:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:` | no release |
 
+Use `feat:` for feature commits. The current release configuration also accepts the non-standard
+`feature:` compatibility alias as minor, pending a separate policy decision.
+
 The table is enforced by the `whatBump` in `.release-it.js`, not by the preset's default; see
 [project overview](project-overview.md) before changing either.
 

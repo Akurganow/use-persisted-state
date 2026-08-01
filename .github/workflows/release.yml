@@ -1,23 +1,8 @@
 name: Release
 
-# DO NOT RENAME THIS FILE. The npm trusted publisher for this package names release.yml as the
-# workflow allowed to publish; under any other name OIDC publishing stops working.
-#
-# Every push to main is a release candidate; the commits decide whether it becomes one. The
-# whatBump in .release-it.js returns no version for a history that earns nothing, so a merge
-# carrying only dependency bumps ends in "No new version to release" and exit 0. That is the
-# property this trigger rests on, and it is measurable: run release-it over a chore-only
-# history and read what it plans. It is stated locally rather than inherited because the
-# preset's default has flipped between its versions — see .agents/rules/project-overview.md.
-#
-# release-it commits the version bump and the changelog, tags them, pushes both back to main, and
-# only then publishes to npm and opens the GitHub release. Nothing reaches the registry until the
-# push has succeeded, because a published version cannot be taken back and a failed push can be
-# retried — see npm.publish in .release-it.js.
-#
-# That push carries `[skip ci]` in the commit message, which is what keeps the release from
-# triggering itself — see the commitMessage in .release-it.js for why that marker is load-bearing
-# here and not merely tidy.
+# npm trusted publishing is bound to this filename.
+# Pushes to main release only histories accepted by whatBump in .release-it.js.
+# Publishing waits for the release commit and tag to reach origin/main.
 on:
   push:
     branches:
@@ -25,11 +10,7 @@ on:
   # Allows dry runs and retrying a release after an npm or GitHub outage.
   workflow_dispatch:
     inputs:
-      # A run that died after the tag was pushed cannot be finished by starting an ordinary one:
-      # the tag is the newest, no commits follow it, and the release ends in "No new version to
-      # release" having done nothing. This targets the version already tagged instead of deriving
-      # a new one, so the publish and the GitHub release get a second attempt. It has to run here
-      # rather than from a laptop, because OIDC publishing only exists inside a workflow.
+      # Retry the tagged version because OIDC publishing is available only in this workflow.
       retry-current:
         description: 'Finish the release for the version already tagged, instead of deriving a new one.'
         required: false
@@ -41,39 +22,29 @@ on:
         type: boolean
         default: false
 
-# One release at a time, across the whole repository. Two runs started close together
-# would otherwise derive their versions from the same history and race to tag and
-# publish. Queueing is right and cancelling is not: a run interrupted between the npm
-# publish and the tag push leaves a version on the registry that no commit points at.
+# Queue releases so concurrent runs cannot derive and publish the same version.
 concurrency:
   group: release
   cancel-in-progress: false
 
 permissions:
-  # Needed to create the GitHub release. The push to main does not go through this token — see the
-  # deploy key on the checkout step.
+  # Create the GitHub release; the push uses the deploy key below.
   contents: write
-  # Needed for npm OIDC trusted publishing, which replaces a stored NPM_TOKEN.
+  # Authorize npm trusted publishing over OIDC.
   id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    # The npm trusted publisher for this package names `npm` as its environment, and the OIDC
-    # token carries the environment claim only when the job opts into one. Without this line
-    # the claim is absent and npm rejects the publish.
+    # npm requires this environment claim in the OIDC token.
     environment: npm
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
-          # @release-it/conventional-changelog derives the version from history.
+          # Version derivation needs the complete commit history.
           fetch-depth: 0
-          # Checks out over SSH and leaves the key in the local git config, so release-it's push
-          # goes out as the deploy key. That actor is what the branch ruleset grants a bypass;
-          # the built-in github-actions[bot] cannot be given one, so GITHUB_TOKEN cannot push to
-          # main however its permissions are set. `persist-credentials` defaults to true, which
-          # is what keeps the key configured for the later push.
+          # The branch ruleset grants this deploy key permission to push the release commit.
           ssh-key: ${{ secrets.RELEASE_SSH_KEY }}
 
       - uses: actions/setup-node@v7
@@ -91,8 +62,7 @@ jobs:
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
       - name: Release
-        # NODE_AUTH_TOKEN is deliberately absent: npm falls back to the legacy
-        # token path whenever it is set, instead of using OIDC.
+        # NODE_AUTH_TOKEN would make npm prefer legacy authentication over OIDC.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RETRY_CURRENT: ${{ inputs.retry-current }}
