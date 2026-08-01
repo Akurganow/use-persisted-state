@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import useStorageHandler, { recordOwnWrite } from './utils/use-storage-handler'
+import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
@@ -36,7 +36,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
     return removal
   }
 
-  const commitEntry = <T>(key: string, newValue: T, pendingOwnWrites: React.RefObject<string[]>): Promise<void> => {
+  const commitEntry = <T>(key: string, newValue: T, pendingOwnWrite: React.RefObject<string | null>): Promise<void> => {
     const write = entryWrites.then(async () => {
       const persistedItem = await storage.get(safeStorageKey)
       let newItem: string
@@ -53,7 +53,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
 
       // Recorded before the write, because the backend may report it before the
       // promise settles.
-      recordOwnWrite(pendingOwnWrites, newItem)
+      pendingOwnWrite.current = newItem
 
       await storage.set({ [safeStorageKey]: newItem })
     })
@@ -86,8 +86,8 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
       setState(value)
     }, [])
 
-    // The entries this hook has written and not yet seen reported back.
-    const pendingOwnWrites = useRef<string[]>([])
+    // The exact entry this hook last wrote and has not yet seen reported back.
+    const pendingOwnWrite = useRef<string | null>(null)
 
     const setPersistedState = useCallback(
       async (newState: React.SetStateAction<T>): Promise<void> => {
@@ -97,7 +97,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
         // once, and only the trip to storage waits its turn.
         applyValue(newValue)
 
-        await commitEntry<T>(key, newValue, pendingOwnWrites)
+        await commitEntry<T>(key, newValue, pendingOwnWrite)
       },
       [key, applyValue],
     )
@@ -112,7 +112,7 @@ export default function createAsyncPersistedState<S extends AsyncStorage>(
     // between the read and the subscription in which a write belongs to neither
     // and is lost. Reading last covers everything written before the subscription
     // began, and the listener covers everything after.
-    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrites)
+    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrite)
 
     useEffect(() => {
       // Two separate questions, and one cell cannot hold both: whether this load

@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { Storage } from './@types/storage'
 import type { PersistedState, UsePersistedState } from './@types/hook'
 
-import useStorageHandler, { recordOwnWrite } from './utils/use-storage-handler'
+import useStorageHandler from './utils/use-storage-handler'
 import getNewValue from './utils/get-new-value'
 import getNewItem from './utils/get-new-item'
 import getPersistedValue from './utils/get-persisted-value'
@@ -48,8 +48,8 @@ export default function createPersistedState(storageKey: string, storage: Storag
       applyValue(readPersisted(key, initialValue))
     }
 
-    // The entries this hook has written and not yet seen reported back.
-    const pendingOwnWrites = useRef<string[]>([])
+    // The exact entry this hook last wrote and has not yet seen reported back.
+    const pendingOwnWrite = useRef<string | null>(null)
 
     const setPersistedState = useCallback(
       (newState: React.SetStateAction<T>): void => {
@@ -70,14 +70,14 @@ export default function createPersistedState(storageKey: string, storage: Storag
           return
         }
 
-        recordOwnWrite(pendingOwnWrites, newItem)
+        pendingOwnWrite.current = newItem
 
         storage.set({ [safeStorageKey]: newItem })
       },
       [key, applyValue],
     )
 
-    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrites)
+    useStorageHandler<T>(key, safeStorageKey, applyValue, storage, initialValue, pendingOwnWrite)
 
     return [state, setPersistedState]
   }
