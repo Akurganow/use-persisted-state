@@ -127,9 +127,8 @@ heading containing `null`, as in `## [null](compare/v1.0.0...vnull)`. That is th
 formatting a heading before the run decides there is no version; nothing is written and nothing is
 published. It is noise in the log, not a symptom.
 
-The workflow can also be started by hand from the Actions tab, which is how you force an increment
-the commit history understates, rehearse the whole thing with `--dry-run`, or retry a release whose
-commits are already on `main` after an outage.
+The workflow can also be started by hand from the Actions tab to rehearse the release with
+`--dry-run` or retry the currently tagged release after an outage.
 
 ## Reporting bugs and security issues
 
