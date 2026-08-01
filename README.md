@@ -257,6 +257,14 @@ tells a `null` you stored apart from a `null` that JSON produced.
 
 Contributions are welcome — see [CONTRIBUTING.md](https://github.com/Akurganow/use-persisted-state/blob/main/CONTRIBUTING.md) for setup, testing and the commit convention, and [CODE_OF_CONDUCT.md](https://github.com/Akurganow/use-persisted-state/blob/main/CODE_OF_CONDUCT.md) for community standards.
 
+## A note from the creator
+
+I continue to maintain this project, but my available time is limited. In practice, I usually return to it once or twice a year, so responses may take time.
+
+I use AI-assisted development alongside my own engineering judgment to make maintenance more sustainable and help me return to the project more often. I remain responsible for the project's direction and for every change and release.
+
+— Alexander Kurganov
+
 ## License
 
 [MIT](LICENSE)
