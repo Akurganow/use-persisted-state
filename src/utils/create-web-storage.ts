@@ -42,35 +42,36 @@ export default (storage: globalThis.Storage | undefined): Storage => {
 
   return {
     get: keys => {
-      const result: { [key: string]: string } = {}
+      const result = new Map<string, string>()
 
       for (const key of toKeyList(keys)) {
         const item = storage.getItem(key)
 
         // `null` is the only answer meaning absence; an empty string is a value the caller stored.
-        if (item !== null) result[key] = item
+        if (item !== null) result.set(key, item)
       }
 
-      return result
+      return Object.fromEntries(result)
     },
     set: items => {
-      const changes: { [key: string]: StorageChange } = {}
+      const changes = new Map<string, StorageChange>()
 
       for (const [key, value] of Object.entries(items)) {
         const oldValue = storage.getItem(key)
 
         storage.setItem(key, value)
 
-        changes[key] = {
+        changes.set(key, {
           oldValue,
           newValue: value,
-        }
+        })
       }
 
-      if (Object.keys(changes).length > 0) notifier.fire(changes)
+      // Nothing was asked for, so nothing changed.
+      if (changes.size > 0) notifier.fire(Object.fromEntries(changes))
     },
     remove: keys => {
-      const changes: { [key: string]: StorageChange } = {}
+      const changes = new Map<string, StorageChange>()
 
       for (const key of toKeyList(keys)) {
         const oldValue = storage.getItem(key)
@@ -81,13 +82,13 @@ export default (storage: globalThis.Storage | undefined): Storage => {
 
         storage.removeItem(key)
 
-        changes[key] = {
+        changes.set(key, {
           oldValue,
           newValue: null,
-        }
+        })
       }
 
-      if (Object.keys(changes).length > 0) notifier.fire(changes)
+      if (changes.size > 0) notifier.fire(Object.fromEntries(changes))
     },
     onChanged,
   }

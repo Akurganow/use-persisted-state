@@ -20,26 +20,26 @@ export function toStoredValue(value: unknown): string | null | undefined {
 export function toStorageChanges(changes: { [key: string]: { oldValue?: unknown; newValue?: unknown } }): {
   [key: string]: StorageChange
 } {
-  const result: { [key: string]: StorageChange } = {}
+  const result = new Map<string, StorageChange>()
 
   for (const [key, change] of Object.entries(changes)) {
-    result[key] = {
+    result.set(key, {
       oldValue: toStoredValue(change.oldValue),
       newValue: toStoredValue(change.newValue),
-    }
+    })
   }
 
-  return result
+  return Object.fromEntries(result)
 }
 
 export function toStoredItems(items: { [key: string]: unknown }): { [key: string]: string } {
-  const result: { [key: string]: string } = {}
+  const result = new Map<string, string>()
 
   for (const [key, value] of Object.entries(items)) {
-    if (typeof value === 'string') result[key] = value
+    if (typeof value === 'string') result.set(key, value)
   }
 
-  return result
+  return Object.fromEntries(result)
 }
 
 export interface ListenerRegistry {

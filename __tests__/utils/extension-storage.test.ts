@@ -53,5 +53,20 @@ describe('extension-storage', function () {
         key: { oldValue: undefined, newValue: 'text' },
       })
     })
+
+    // The backend supplies these keys, so `__proto__` can arrive. Built by
+    // assignment it would reach the accessor on `Object.prototype` and the key
+    // would vanish. Written as computed keys below, or the literals would set a
+    // prototype and assert nothing.
+    test('carries a __proto__ key through both narrowings', function () {
+      expect(toStoredItems({ ['__proto__']: 'kept', other: 'kept too' })).toEqual({
+        ['__proto__']: 'kept',
+        other: 'kept too',
+      })
+
+      expect(toStorageChanges({ ['__proto__']: { oldValue: 'was', newValue: 'is' } })).toEqual({
+        ['__proto__']: { oldValue: 'was', newValue: 'is' },
+      })
+    })
   })
 })
