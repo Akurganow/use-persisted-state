@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.4](https://github.com/Akurganow/use-persisted-state/compare/v1.4.3...v1.4.4) (2026-08-01)
+
+### Bug Fixes
+
+* use each async key's initial value ([cc98333](https://github.com/Akurganow/use-persisted-state/commit/cc98333ceb7360ae215fdcc8574c81d135fc99c8))
+
 ## [1.4.3](https://github.com/Akurganow/use-persisted-state/compare/v1.4.2...v1.4.3) (2026-08-01)
 
 ### Bug Fixes
