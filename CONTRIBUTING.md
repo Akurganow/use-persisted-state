@@ -39,9 +39,10 @@ npm ci
 | `esm/`, `storages/` | Hand-written wrappers over `lib/` — see [packaging](docs/packaging.md) |
 | `scripts/` | Package checks run by `npm run check:package` |
 
-Everything under `src/` is public API that other projects depend on. A change to a signature or to
-observable behaviour — what the hook returns, when it re-renders, what lands in storage — affects
-consumers even when the type signature is untouched.
+The supported API is the package root and the documented storage adapter entry points. Legacy
+`./lib/*` and compatibility `./src/*` paths remain resolvable, so run the packaging checks before
+changing their modules. Observable behaviour — what the hook returns, when it re-renders, what lands
+in storage — affects consumers even when the type signature is untouched.
 
 ## Development commands
 

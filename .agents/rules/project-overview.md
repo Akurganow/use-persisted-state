@@ -10,13 +10,14 @@ tags:
 ## Project Overview
 
 `@plq/use-persisted-state` is a published npm library: a React hook that keeps state in a storage
-backend. Everything under `src/` is public API that other projects depend on, so a careless change to
-a signature or to observable behaviour breaks strangers' builds.
+backend. Its supported API is the package root and the documented storage adapter entry points.
+Legacy `./lib/*` and compatibility `./src/*` paths remain resolvable, so changes there still need the
+compatibility checks described in [packaging](../../docs/packaging.md).
 
 - **Runtime dependencies: `@plq/is` only.** Keep it that way — this package is chosen for being small.
 - **Peer:** React >= 16.8 (hooks), supports 18 and 19.
-- **Entry point** is `src/index.ts`. Storage adapters live in `src/storages/`, internals in
-  `src/utils/`, public types in `src/@types/`.
+- **Entry point** is `src/index.ts`. Storage adapters live in `src/storages/`, internal helpers in
+  `src/utils/`, and public types in `src/@types/`.
 - **`lib/` is build output** produced by `tsc`. Never edit it by hand.
 - **`demo/`** is a Vite example app and is not published.
 
@@ -100,7 +101,7 @@ The whole release-it configuration lives in `.release-it.js` rather than in `pac
 `whatBump` is a function. release-it merges both sources, so a configuration split across them would
 exist twice.
 
-### Upgrades known to be blocked
+### Known upgrade constraint
 
 - **TypeScript must not go to 7.** TypeScript 7 ships the Go compiler and exposes no stable
   programmatic API, so every tool that type-checks through one is stranded — ts-jest here,
@@ -108,28 +109,3 @@ exist twice.
   installing 7 fails with ERESOLVE rather than degrading quietly, so the whole test suite stops
   running. The blocker is TypeScript, not ts-jest: no ts-jest release can fix this before the API
   lands. Revisit when TypeScript 7.1 ships, not on ts-jest releases.
-
-- **`@vitejs/plugin-react` 6 cannot be bumped in place.** Version 6 drops Babel altogether — Vite 8
-  runs the React Refresh transform through Oxc — so the plugin pulls no Babel of its own. But
-  against any existing lock npm walks its optional peers into `@rolldown/plugin-babel`, which asks
-  for `@babel/plugin-transform-runtime@8.0.0-rc` and through it `@babel/core@^8.0.0-rc`, colliding
-  with the Babel 7 jest holds; the install fails with ERESOLVE. A freshly regenerated lock fails
-  the same way, so this is not staleness. Resolving from no lock at all skips the optional chain
-  and pulls no Babel 8 at all. Regenerate the lock rather than editing the version and running
-  `npm install` — and note that the incremental path is the one Dependabot takes, so its pull
-  request for this upgrade will not resolve.
-
-- **`brace-expansion` (GHSA-mh99-v99m-4gvg) stays unfixed, and that is the decision.** `npm audit`
-  reports 20 high advisories; all twenty are one root, a denial of service through unbounded
-  expansion. The patch landed only in 5.0.8 and was never backported — the 1.x line ends at 1.1.18
-  and 2.x at 2.1.4, which is what the tree holds. jest pins the chain: `babel-jest` and
-  `@jest/transform` both require `babel-plugin-istanbul@^7`, whose `test-exclude@6` reaches those
-  versions, and jest is already at its latest. That leaves `overrides`, forbidden here, or
-  `npm audit fix --force`, which proposes jest 25 — five majors back, destruction rather than
-  repair. The risk is accepted rather than overlooked: the whole chain is `dev: true`, and the
-  published tarball carries only `/src`, `/lib` and `@plq/is`, so it reaches no consumer. Revisit
-  when jest moves to `babel-plugin-istanbul@8`, which resolves `minimatch@10` and
-  `@isaacs/brace-expansion` instead.
-
-Keep the reason written next to any pin. A pin without a stated reason gets "helpfully" removed by
-whoever touches dependencies next.

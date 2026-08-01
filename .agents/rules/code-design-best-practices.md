@@ -1,5 +1,5 @@
 ---
-description: DRY, SOLID, clean code and clean architecture rules, with worked examples from this codebase
+description: DRY, SOLID, clean code and clean architecture guidance
 trigger: always
 tags:
   - design
@@ -10,23 +10,12 @@ tags:
 
 ## Code Design Best Practices
 
-These are requirements, not aspirations. A change that violates one of them is not finished, however
-well it works.
-
 ### DRY
 
-**Never duplicate logic.** Two copies drift apart, and the second one is the one nobody updates. When
-the same behaviour is needed twice, extract it — and when you find yourself copying a file to adapt
-it, that is the moment to factor out the shared part instead.
-
-The two extension adapters show the shape this takes. `src/storages/chrome-storage.ts` and
-`src/storages/browser-storage.ts` were near-identical copies; what they shared — the listener
-registry, the change conversion, the value normalization — now lives in
-`src/utils/extension-storage.ts`, and each adapter keeps only the calls its own extension API needs.
-A third backend extends that module rather than copying an adapter.
-
-DRY is about knowledge, not characters. Two pieces of code that look alike but answer to different
-reasons for change should stay apart; merging them couples things that must move independently.
+Avoid duplicating project knowledge. Extract code when its copies express the same policy and are
+expected to change together, not because they merely look alike or appear twice. Keep code separate
+when it answers to different reasons for change; an abstraction is worthwhile only when it reduces
+the total cost of understanding and modifying the system.
 
 ### SOLID
 
