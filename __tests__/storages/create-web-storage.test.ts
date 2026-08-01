@@ -82,6 +82,34 @@ describe('create-web-storage', function () {
     expect(emptyStringStorage.get('emptyKey')).toEqual({ emptyKey: '' })
   })
 
+  // A reported removal resets every hook on the entry to its initial value, and a
+  // functional initial value is called to do it. Reporting one for a key that held
+  // nothing mints a fresh value from an operation that removed nothing.
+  test('should report a removal only for a key that held something', function () {
+    const removalStorage = createWebStorage(createMemoryArea({ present: 'value', emptyKey: '' }))
+    const listener = jest.fn()
+
+    removalStorage.onChanged.addListener(listener)
+
+    try {
+      removalStorage.remove('absent')
+
+      expect(listener).not.toHaveBeenCalled()
+
+      removalStorage.remove('present')
+
+      expect(listener).toHaveBeenCalledWith({ present: { oldValue: 'value', newValue: null } })
+
+      // A stored empty string was removed, so it is reported: absence is `null`
+      // alone, and a truthiness check here would drop this event.
+      removalStorage.remove('emptyKey')
+
+      expect(listener).toHaveBeenLastCalledWith({ emptyKey: { oldValue: '', newValue: null } })
+    } finally {
+      removalStorage.onChanged.removeListener(listener)
+    }
+  })
+
   // Without a storage global the adapter is inert, but it still has to satisfy
   // the Storage contract: a caller subscribing on the server must not crash.
   describe('without a storage global', function () {

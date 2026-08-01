@@ -75,6 +75,10 @@ export default (storage: globalThis.Storage | undefined): Storage => {
       for (const key of toKeyList(keys)) {
         const oldValue = storage.getItem(key)
 
+        // Nothing was there, so nothing changed. A reported removal resets every
+        // hook on the entry, calling a functional initial value to do it.
+        if (oldValue === null) continue
+
         storage.removeItem(key)
 
         changes[key] = {
