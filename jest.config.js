@@ -9,14 +9,8 @@ module.exports = {
     // test cannot silently lose its matchers by forgetting the import.
     '@testing-library/jest-dom',
   ],
-  // The storage mocks are module-level and record every call, so a
-  // `not.toHaveBeenCalled()` assertion only held while declaration order put it
-  // first; under `--randomize` a sibling's writes leaked in. Clearing call
-  // history before each test makes the assertion mean what it says. `resetMocks`
-  // must stay off — it strips the mocks' implementations, which the
-  // jest-localstorage-mock docs call out explicitly.
+  // Isolate storage mock call history without resetting their implementations.
   clearMocks: true,
-  // Tests live only here. Without this, jest also walks agent worktrees under
-  // .claude/ and the built output, running the same suites twice.
+  // Avoid duplicate discovery in agent worktrees and build output.
   roots: ['<rootDir>/__tests__'],
 }

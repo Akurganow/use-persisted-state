@@ -1,7 +1,4 @@
-// Runs inside the throwaway consumer created by smoke.mjs, against the packed
-// tarball. Every published specifier must load through both module systems and
-// resolve to the single CJS instance — the listener registries are module-level
-// state, so a second copy would silently break same-tab synchronisation.
+// Every published specifier must load through both module systems without a second CJS instance.
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
@@ -48,16 +45,7 @@ function defineGlobal(name, value) {
   Object.defineProperty(globalThis, name, { value, configurable: true, writable: true })
 }
 
-// The adapters touch the DOM and extension APIs at import time; plain Node has
-// neither, so without stubs every non-root entry would fail to load and the
-// matrix would silently shrink to the root entry alone.
-//
-// Both halves of the listener pair are stubbed on purpose. This file checks
-// packaging — that the map resolves and that every path reaches one module
-// instance. Whether an adapter survives a runtime missing half the pair is a
-// property of the adapter and belongs in its own unit test, where the failure
-// names itself; here the same failure reads as "packaging is broken" and sends
-// the reader after the wrong cause.
+// Import-time browser stubs keep this check focused on package resolution and module identity.
 defineGlobal('addEventListener', () => {})
 defineGlobal('removeEventListener', () => {})
 defineGlobal('localStorage', createMemoryWebStorage())
@@ -118,13 +106,8 @@ for (const specifier of specifiers) {
   await check(`import ${specifier}`, () => import(specifier))
 }
 
-// The exports map answers first on any modern resolver, so the stubs that serve
-// TypeScript's node10 resolution can only be reached by their file path. Without
-// this check a wrong relative path inside them would ship unnoticed.
-// Resolved inside the check rather than at module scope: this lookup goes
-// through the exports map too, and at module scope a broken map aborts the file
-// before a single check reports, leaving a stack trace instead of a named
-// failure.
+// Modern resolvers bypass node10 stubs, so verify them by file path.
+// Resolve inside named checks so a broken map reports the affected case.
 function resolvePackageRoot() {
   return dirname(requireCjs.resolve(`${packageName}/package.json`))
 }
@@ -142,10 +125,7 @@ for (const { name } of adapters) {
   })
 }
 
-// `files` shipped /src long before this map existed, so these paths already
-// resolved for everyone and the map must not take them away. Resolution only:
-// the sources are TypeScript, and whether a given runtime can execute them is
-// not something the exports map decides.
+// Preserve pre-map source paths as resolution-only compatibility.
 for (const subpath of ['src/index.ts', 'src/@types/storage.ts']) {
   await check(`compat: ${subpath} still resolves`, () => {
     requireCjs.resolve(`${packageName}/${subpath}`)
