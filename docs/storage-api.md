@@ -60,10 +60,10 @@ interface StorageChange {
 }
 ```
 
-`changes` maps each changed storage key to its old and new values. When a key is removed, fire the
-listener with a `newValue` of `null` (or omit it) and the previous stored string in `oldValue` —
-the library treats that as a removal and resets affected hooks to their initial values. A removal
-reported without an `oldValue` is ignored.
+`changes` maps each changed storage key to its old and new values. An absent or `null` `newValue` is
+the removal signal: the library resets every affected hook to its latest initial value without
+reading, parsing or comparing `oldValue`. Fire the listener only for operations consumers should
+observe, because a removal always resets, whatever `oldValue` holds.
 
 ## Contract notes
 
@@ -80,9 +80,11 @@ reported without an `oldValue` is ignored.
   hook key. A write replaces all of it, so on an asynchronous storage the library takes one change
   to that key at a time — writes and `clear` alike: your `set` is never called for an entry merged
   from a snapshot another write has since replaced, and a removal is never undone by a write that
-  was already queued behind it. An entry the library cannot read — a string that will not parse, or
-  one that parses to something other than a JSON object — is left untouched instead: the write is
-  reported and skipped.
+  was already queued behind it. That queue belongs to one factory: a failed operation rejects its
+  own caller and the operations queued behind it still run, while separate factories and writers
+  outside the library are not coordinated. An entry the library cannot read — a string that will not
+  parse, or one that parses to something other than a JSON object — is left untouched: `set` is not
+  called at all, and the setter throws on a synchronous backend or rejects on an asynchronous one.
 - **The refusal reaches only as far as `get` reports.** An adapter that narrows a value to absent
   hides it from that check, and the next write replaces it. This is what the bundled extension
   adapters do with the non-string values their backend allows, so a foreign object under a
