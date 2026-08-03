@@ -9,7 +9,7 @@ A React `useState` that persists to `localStorage`, `sessionStorage`, extension 
 
 ## 🚀 Why `@plq/use-persisted-state`?
 
-- ⚡ **Seamless Cross-Tab & Cross-Component Sync** — Keep state synchronized across components and browser tabs automatically.
+- ⚡ **Seamless Cross-Component Sync** — Keep state synchronized across components, with cross-tab updates via the `localStorage` adapter.
 - 🧩 **First-Class Extension Support** — Native async adapters for `chrome.storage` (`local`, `sync`, `managed`) and `browser.storage` for WebExtensions.
 - 🧱 **Modular Adapters & Tree-Shaking** — Import only what you use (`/storages/local-storage`, `/storages/chrome-storage`) with zero extra bloat.
 - 🔒 **Type-Safe & React 19 Ready** — Written in TypeScript with shipped types and full React 19 support.
