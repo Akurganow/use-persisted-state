@@ -7,6 +7,14 @@
 
 A React `useState` that persists to `localStorage`, `sessionStorage`, extension storage (`browser.storage` / `chrome.storage`), or any custom backend.
 
+## 🚀 Why `@plq/use-persisted-state`?
+
+- ⚡ **Seamless Cross-Tab & Cross-Component Sync** — Keep state synchronized across components and browser tabs automatically.
+- 🧩 **First-Class Extension Support** — Native async adapters for `chrome.storage` (`local`, `sync`, `managed`) and `browser.storage` for WebExtensions.
+- 🧱 **Modular Adapters & Tree-Shaking** — Import only what you use (`/storages/local-storage`, `/storages/chrome-storage`) with zero extra bloat.
+- 🔒 **Type-Safe & React 19 Ready** — Written in TypeScript with shipped types and full React 19 support.
+- 📦 **Ultra Lightweight** — Single tiny runtime dependency ([`@plq/is`](https://www.npmjs.com/package/@plq/is)) with clean ESM and CommonJS exports.
+
 ## Features
 
 - Persist state to `localStorage`, `sessionStorage`, extension storage, or almost anything else that implements the [storage API](https://github.com/Akurganow/use-persisted-state/blob/main/docs/storage-api.md)
